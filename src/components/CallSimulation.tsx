@@ -1,14 +1,20 @@
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { textToSpeech, voices } from "@/services/elevenLabsService";
+import { Loader2 } from "lucide-react";
+import { toast } from "@/components/ui/use-toast";
 
 const CallSimulation = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [responses, setResponses] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const simulationSteps = [
     {
@@ -44,15 +50,83 @@ const CallSimulation = () => {
     setResponses([...responses, option]);
     if (currentStep < simulationSteps.length - 1) {
       setCurrentStep(currentStep + 1);
+      // Generate audio for the next customer message
+      generateAudioForCurrentStep(currentStep + 1);
     } else {
       // Simulation complete
       console.log("Simulation complete");
+      toast({
+        title: "Simulation Complete",
+        description: "You've completed this scenario. Check your score below.",
+      });
     }
   };
 
   const handlePlayPause = () => {
-    setIsPlaying(!isPlaying);
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play().catch(error => {
+          console.error("Error playing audio:", error);
+          toast({
+            title: "Playback Error",
+            description: "There was an error playing the audio. Please try again.",
+            variant: "destructive",
+          });
+        });
+      }
+      setIsPlaying(!isPlaying);
+    } else {
+      // Generate audio if it doesn't exist yet
+      generateAudioForCurrentStep(currentStep);
+    }
   };
+
+  const generateAudioForCurrentStep = async (stepIndex: number) => {
+    if (stepIndex >= simulationSteps.length) return;
+    
+    try {
+      setIsLoading(true);
+      setAudioUrl(null);
+      
+      const step = simulationSteps[stepIndex];
+      const audioUrl = await textToSpeech({
+        text: step.message,
+        voiceId: voices.rachel, // Using the Sarah voice for customer
+      });
+      
+      setAudioUrl(audioUrl);
+      setIsLoading(false);
+      
+      // Auto-play the audio if needed
+      if (audioRef.current && !isPlaying) {
+        audioRef.current.play().catch(console.error);
+        setIsPlaying(true);
+      }
+    } catch (error) {
+      console.error("Error generating audio:", error);
+      setIsLoading(false);
+      toast({
+        title: "Audio Generation Failed",
+        description: "Could not generate the customer's voice. Please check your API key.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Initialize audio for first step
+  useEffect(() => {
+    generateAudioForCurrentStep(currentStep);
+  }, []);
+
+  // Update audio element when audioUrl changes
+  useEffect(() => {
+    if (audioRef.current && audioUrl) {
+      audioRef.current.src = audioUrl;
+      audioRef.current.onended = () => setIsPlaying(false);
+    }
+  }, [audioUrl]);
 
   return (
     <section className="py-16 bg-white" id="simulation">
@@ -95,8 +169,14 @@ const CallSimulation = () => {
                     size="sm" 
                     className={`flex items-center ${isPlaying ? 'border-red-500 text-red-500' : ''}`}
                     onClick={handlePlayPause}
+                    disabled={isLoading}
                   >
-                    {isPlaying ? (
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                        Loading...
+                      </>
+                    ) : isPlaying ? (
                       <>
                         <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <rect x="6" y="4" width="4" height="16" rx="1" stroke="currentColor" strokeWidth="2" fill="currentColor" />
@@ -121,6 +201,9 @@ const CallSimulation = () => {
                   {simulationSteps[currentStep].message}
                 </p>
               </div>
+              
+              {/* Hidden audio element */}
+              <audio ref={audioRef} style={{ display: 'none' }} />
 
               <Separator className="my-6" />
 
