@@ -3,7 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import ScenariosList from "@/components/dashboard/ScenariosList";
 import AchievementsList from "@/components/dashboard/AchievementsList";
-import LearningPathList from "@/components/dashboard/LearningPathList";
+import LearningPath from "@/components/learning-path/LearningPath";
 
 interface DashboardTabsProps {
   dashboardData: any;
@@ -69,7 +69,7 @@ const DashboardTabs = ({ dashboardData }: DashboardTabsProps) => {
             <CardDescription>Follow this path to mastery</CardDescription>
           </CardHeader>
           <CardContent>
-            <LearningPathList />
+            <LearningPath />
           </CardContent>
         </Card>
       </TabsContent>
