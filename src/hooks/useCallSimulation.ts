@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { textToSpeech, voices } from "@/services/elevenLabsService";
 import { 
@@ -134,7 +133,7 @@ export function useCallSimulation() {
             title: `Response Score: ${customerResponse.score}%`,
             description: customerResponse.feedback,
             variant: customerResponse.score >= 80 ? "default" : 
-                    customerResponse.score >= 60 ? "secondary" : "destructive",
+                    customerResponse.score >= 60 ? "default" : "destructive",
           });
         }
       }

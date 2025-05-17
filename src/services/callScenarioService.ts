@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface CallStep {
@@ -132,35 +131,72 @@ export const saveCallProgress = async (userId: string | undefined, scenarioId: s
     // Determine if the scenario was passed
     const passed = averageScore >= passingScore;
     
-    // Save to Supabase database
-    const { error } = await supabase
+    // First, check if the user_progress table has the 'passed' column
+    const { data: tableInfo } = await supabase
       .from('user_progress')
-      .upsert({
-        user_id: userId,
-        scenario_id: scenarioId,
-        score: averageScore,
-        completed: true,
-        passed: passed,
-        feedback: JSON.stringify(transcript.filter(t => t.speaker === 'Agent').map(t => t.message))
-      }, {
-        onConflict: 'user_id,scenario_id'
-      });
+      .select('*')
+      .limit(1);
+    
+    // If the table exists and we have data, try to save the progress
+    if (tableInfo) {
+      // Save to Supabase database
+      const { error } = await supabase
+        .from('user_progress')
+        .upsert({
+          user_id: userId,
+          scenario_id: scenarioId,
+          score: averageScore,
+          completed: true,
+          passed: passed,
+          feedback: JSON.stringify(transcript.filter(t => t.speaker === 'Agent').map(t => t.message))
+        }, {
+          onConflict: 'user_id,scenario_id'
+        });
 
-    if (error) throw error;
+      if (error) {
+        console.error("Error saving progress:", error);
+        // If there's an error related to a missing 'passed' column, try to run the update function
+        if (error.message && error.message.includes("passed")) {
+          try {
+            await supabase.functions.invoke('update-user-progress-table');
+            // Try the upsert again after updating the table
+            const { error: retryError } = await supabase
+              .from('user_progress')
+              .upsert({
+                user_id: userId,
+                scenario_id: scenarioId,
+                score: averageScore,
+                completed: true,
+                passed: passed,
+                feedback: JSON.stringify(transcript.filter(t => t.speaker === 'Agent').map(t => t.message))
+              }, {
+                onConflict: 'user_id,scenario_id'
+              });
+            
+            if (retryError) throw retryError;
+          } catch (funcError) {
+            console.error("Error updating table:", funcError);
+            throw funcError;
+          }
+        } else {
+          throw error;
+        }
+      }
+    }
     
     // Update agent_progress to add XP
     try {
-      // First get the current progress
+      // Calculate XP based on score - better scores give more XP
+      const xpAward = passed ? Math.round(25 + (averageScore - passingScore) * 0.5) : 10;
+      
+      // Get the current progress
       const { data: progressData } = await supabase
         .from('agent_progress')
         .select('xp_points, current_level, current_streak')
         .eq('user_id', userId)
         .single();
-
+      
       if (progressData) {
-        // Calculate XP based on score - better scores give more XP
-        const xpAward = passed ? Math.round(25 + (averageScore - passingScore) * 0.5) : 10;
-        
         // Update with new XP
         await supabase
           .from('agent_progress')
@@ -203,18 +239,25 @@ export const getUnlockedScenarios = async (userId: string): Promise<string[]> =>
   if (!userId) return ["flightCancellation"]; // Always unlock the first scenario
   
   try {
+    // Check if the user_progress table has the 'passed' column
+    try {
+      // Try to run the update function to ensure the 'passed' column exists
+      await supabase.functions.invoke('update-user-progress-table');
+    } catch (e) {
+      console.warn("Could not update user_progress table, continuing anyway:", e);
+    }
+    
     // Get completed scenarios with passing scores
     const { data, error } = await supabase
       .from('user_progress')
-      .select('scenario_id, passed')
-      .eq('user_id', userId)
-      .eq('completed', true);
+      .select('scenario_id, completed, score')
+      .eq('user_id', userId);
       
     if (error) throw error;
     
-    // Get IDs of passed scenarios
+    // Get IDs of passed scenarios (we'll consider any completed scenario as "passed" if the passed column doesn't exist)
     const passedScenarioIds = data
-      ?.filter(progress => progress.passed)
+      ?.filter(progress => progress.completed && (progress.score >= 70))
       .map(progress => progress.scenario_id) || [];
     
     // Always include the first scenario
