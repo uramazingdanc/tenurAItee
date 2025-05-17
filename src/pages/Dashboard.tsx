@@ -14,34 +14,75 @@ import UserProgressCard from "@/components/dashboard/UserProgressCard";
 import RecommendationsList from "@/components/dashboard/RecommendationsList";
 import PerformanceStats from "@/components/dashboard/PerformanceStats";
 import { UserStats } from "@/types/scenario";
+import { motion } from "@/components/ui/motion";
+import { toast } from "@/components/ui/sonner";
+import { useQuery } from "@tanstack/react-query";
 
 const Dashboard = () => {
-  const [progress, setProgress] = useState(65);
-  const [userStats, setUserStats] = useState<UserStats>({
+  const [isAIChatOpen, setIsAIChatOpen] = useState(false);
+  const { user } = useAuth();
+
+  // Use React Query for data fetching
+  const { data: progressData, error: progressError } = useQuery({
+    queryKey: ['userProgress', user?.id],
+    queryFn: () => user?.id ? fetchUserProgress(user.id) : Promise.resolve([]),
+    enabled: !!user?.id,
+  });
+  
+  // Demo user stats - in a real implementation this would come from progressData
+  const [userStats] = useState<UserStats>({
     scenariosCompleted: 12,
     badgesEarned: 8,
     avgRating: 4.8,
   });
-  const [isAIChatOpen, setIsAIChatOpen] = useState(false);
-  const { user } = useAuth();
   
-  // Fetch user progress data when the component mounts
+  // Calculate progress based on user data
+  const calculateProgress = () => {
+    if (!progressData || progressData.length === 0) return 65; // Default progress
+    
+    // Calculate based on completed scenarios vs total available
+    const completedCount = progressData.filter(p => p.completed).length;
+    const totalCount = progressData.length;
+    
+    return totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 65;
+  };
+  
+  const progress = calculateProgress();
+  
+  useEffect(() => {
+    if (progressError) {
+      console.error("Error fetching user progress:", progressError);
+      toast.error("Failed to load your progress data. Please try again later.");
+    }
+  }, [progressError]);
+  
+  // Demo effect to show a welcome toast
   useEffect(() => {
     if (user?.id) {
-      fetchUserProgress(user.id)
-        .then(progressData => {
-          console.log("User progress data:", progressData);
-          // In a real implementation, we would update the state with this data
-        })
-        .catch(error => {
-          console.error("Error fetching user progress:", error);
-        });
+      const hasSeenWelcome = sessionStorage.getItem('welcomed');
+      if (!hasSeenWelcome) {
+        setTimeout(() => {
+          toast.success("Welcome back to your training dashboard!", {
+            description: "You have new recommended scenarios to explore.",
+            action: {
+              label: "View",
+              onClick: () => document.getElementById("scenarios-tab")?.click()
+            }
+          });
+          sessionStorage.setItem('welcomed', 'true');
+        }, 1500);
+      }
     }
   }, [user?.id]);
 
   return (
     <div className="min-h-screen bg-gray-50 pt-20">
-      <div className="container mx-auto p-4 md:p-6">
+      <motion.div 
+        className="container mx-auto p-4 md:p-6"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
         <DashboardHeader user={user} />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -52,7 +93,7 @@ const Dashboard = () => {
             {/* Tabs Section */}
             <Tabs defaultValue="scenarios">
               <TabsList className="grid grid-cols-3 mb-4">
-                <TabsTrigger value="scenarios">Scenarios</TabsTrigger>
+                <TabsTrigger value="scenarios" id="scenarios-tab">Scenarios</TabsTrigger>
                 <TabsTrigger value="achievements">Achievements</TabsTrigger>
                 <TabsTrigger value="learning">Learning Path</TabsTrigger>
               </TabsList>
@@ -106,7 +147,7 @@ const Dashboard = () => {
             <PerformanceStats />
           </div>
         </div>
-      </div>
+      </motion.div>
       
       {/* AI Chat Widget */}
       <AIChatWidget isOpen={isAIChatOpen} setIsOpen={setIsAIChatOpen} />
