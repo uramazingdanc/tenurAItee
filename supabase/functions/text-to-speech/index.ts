@@ -1,5 +1,5 @@
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 interface RequestBody {
   text: string;
@@ -74,9 +74,11 @@ serve(async (req) => {
     // Get the audio data
     const audioData = await response.arrayBuffer();
     
-    // Create a temporary audio URL
-    const audio = Buffer.from(audioData).toString('base64');
-    const audioUrl = `data:audio/mpeg;base64,${audio}`;
+    // Create a base64 string from the audio data
+    const base64Audio = btoa(
+      String.fromCharCode(...new Uint8Array(audioData))
+    );
+    const audioUrl = `data:audio/mpeg;base64,${base64Audio}`;
 
     return new Response(
       JSON.stringify({ audio_url: audioUrl }),

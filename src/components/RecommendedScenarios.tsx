@@ -3,39 +3,11 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "@/components/ui/motion";
 import { Card } from "@/components/ui/card";
-import { Check, Square } from "lucide-react";
-import { fetchScenarios } from "@/services/scenarioService";
-import { Scenario } from "@/services/scenarioService";
-import { Badge } from "@/components/ui/badge";
+import { Square } from "lucide-react";
+import { SCENARIOS } from "@/services/callScenarioService";
 
 const RecommendedScenarios = () => {
-  const [scenarios, setScenarios] = useState<Scenario[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const getScenarios = async () => {
-      try {
-        const data = await fetchScenarios();
-        // Sort by difficulty to show beginner scenarios first
-        const sortedScenarios = data.sort((a, b) => {
-          const difficultyOrder = { 
-            "Beginner": 1, 
-            "Intermediate": 2, 
-            "Advanced": 3 
-          };
-          return difficultyOrder[a.difficulty as keyof typeof difficultyOrder] - 
-                 difficultyOrder[b.difficulty as keyof typeof difficultyOrder];
-        });
-        setScenarios(sortedScenarios.slice(0, 3)); // Take top 3 recommended
-      } catch (error) {
-        console.error("Error fetching scenarios:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    getScenarios();
-  }, []);
+  const [isLoading, setIsLoading] = useState(false);
 
   return (
     <div className="py-6">
@@ -52,8 +24,8 @@ const RecommendedScenarios = () => {
         </div>
       ) : (
         <div className="space-y-4">
-          {scenarios.map((scenario, index) => (
-            <Link to={`/scenarios/${scenario.id}`} key={scenario.id}>
+          {SCENARIOS.map((scenario, index) => (
+            <Link to={`#simulation`} key={scenario.id}>
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -67,7 +39,7 @@ const RecommendedScenarios = () => {
                     <div>
                       <h3 className="font-semibold text-gray-800">{scenario.title}</h3>
                       <p className="text-sm text-gray-600">
-                        Practice scenario • {scenario.title.includes("Cancellation") ? "5" : "10"} min
+                        Practice scenario • {scenario.duration} min
                       </p>
                     </div>
                   </div>
