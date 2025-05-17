@@ -12,10 +12,12 @@ import LearningPathList from "@/components/dashboard/LearningPathList";
 import UserProgressCard from "@/components/dashboard/UserProgressCard";
 import RecommendationsList from "@/components/dashboard/RecommendationsList";
 import PerformanceStats from "@/components/dashboard/PerformanceStats";
+import FeatureCardsGrid from "@/components/dashboard/FeatureCardsGrid";
+import CallSimulation from "@/components/CallSimulation";
 import { motion } from "@/components/ui/motion";
 import { toast } from "@/components/ui/sonner";
 import { useQuery } from "@tanstack/react-query";
-import { fetchDashboardData, DashboardData } from "@/services/dashboardService";
+import { fetchDashboardData } from "@/services/dashboardService";
 
 const Dashboard = () => {
   const [isAIChatOpen, setIsAIChatOpen] = useState(false);
@@ -101,6 +103,9 @@ const Dashboard = () => {
         transition={{ duration: 0.5 }}
       >
         <DashboardHeader user={user} />
+        
+        {/* Feature Cards */}
+        <FeatureCardsGrid />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
@@ -180,6 +185,9 @@ const Dashboard = () => {
                 </Card>
               </TabsContent>
             </Tabs>
+            
+            {/* Call Simulation */}
+            <CallSimulation />
           </div>
           
           <div className="space-y-6">

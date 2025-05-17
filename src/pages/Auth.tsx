@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Navigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Eye, EyeOff, LogIn } from "lucide-react";
+import { Phone, FileText, Play, MessageSquare } from "lucide-react";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -56,16 +56,14 @@ const Auth = () => {
   };
   
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-brand-blue to-brand-green-dark bg-clip-text text-transparent">
-            tenurAItee
-          </h1>
-          <p className="text-gray-600 mt-2">Train to be a Tenured Customer Service Agent with AI</p>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome to AgentTrainer</h1>
+          <p className="text-gray-600">Enhance your customer service skills with interactive training</p>
         </div>
-        
-        <Card className="border-brand-blue/20 shadow-lg animate-fade-in">
+
+        <Card className="p-6">
           <Tabs defaultValue={defaultTab} className="w-full">
             <TabsList className="grid grid-cols-2 mb-2">
               <TabsTrigger value="login">Log In</TabsTrigger>
@@ -224,6 +222,31 @@ const Auth = () => {
             </TabsContent>
           </Tabs>
         </Card>
+        
+        <div className="mt-6">
+          <p className="text-sm text-gray-600 text-center">
+            Sign in to access:
+          </p>
+          
+          <div className="mt-4 grid grid-cols-2 gap-4 text-center text-sm">
+            <div className="p-3 border rounded-md">
+              <Phone className="h-5 w-5 mx-auto mb-2 text-green-500" />
+              <p>Mock Call Scenarios</p>
+            </div>
+            <div className="p-3 border rounded-md">
+              <FileText className="h-5 w-5 mx-auto mb-2 text-blue-500" />
+              <p>Knowledge Base</p>
+            </div>
+            <div className="p-3 border rounded-md">
+              <Play className="h-5 w-5 mx-auto mb-2 text-purple-500" />
+              <p>Video Learning</p>
+            </div>
+            <div className="p-3 border rounded-md">
+              <MessageSquare className="h-5 w-5 mx-auto mb-2 text-orange-500" />
+              <p>AI Assistant</p>
+            </div>
+          </div>
+        </div>
         
         <div className="mt-6 text-center text-sm text-gray-500">
           <p>
