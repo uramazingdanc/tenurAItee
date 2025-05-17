@@ -2,7 +2,7 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from '@/components/ui/use-toast';
 
 type AuthContextType = {
@@ -21,6 +21,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Clean up auth state helper function
   const cleanupAuthState = () => {
@@ -44,6 +45,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
+        console.log("Auth state change:", event, currentSession?.user?.email);
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         setIsLoading(false);
@@ -51,9 +53,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (event === 'SIGNED_IN') {
           toast({
             title: "Successfully signed in",
-            description: "Welcome back!",
+            description: "Welcome to your training dashboard!",
           });
-          navigate('/dashboard');
+          
+          // Check if we're on the login page, if so redirect to dashboard
+          if (location.pathname === '/login') {
+            navigate('/dashboard');
+          }
         } else if (event === 'SIGNED_OUT') {
           toast({
             title: "Signed out",
@@ -66,6 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      console.log("Getting existing session:", currentSession?.user?.email);
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
       setIsLoading(false);
@@ -74,7 +81,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate, location.pathname]);
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -95,6 +102,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) throw error;
+      
+      // We don't need to manually navigate here as the onAuthStateChange will handle it
     } catch (error: any) {
       toast({
         title: "Sign in failed",
@@ -121,16 +130,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           data: {
             full_name: fullName,
           },
-          // Don't use email redirect - we want auto sign-in
         },
       });
 
       if (error) throw error;
       
       if (data.user) {
+        console.log("Account created, attempting auto-login");
+        
         // Wait for a moment before trying to sign in
         // This ensures the user is properly created in the database
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 1500));
         
         // Now sign in with the credentials
         const { error: signInError } = await supabase.auth.signInWithPassword({
@@ -145,17 +155,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             title: "Account created",
             description: "Your account has been created. Please sign in with your credentials.",
           });
-          navigate('/login');
           return;
         }
         
-        // Success case
+        // Success case - will be handled by onAuthStateChange
         toast({
-          title: "Account created",
+          title: "Welcome to tenurAItee!",
           description: "Your account has been created and you're now signed in.",
         });
         
-        navigate('/dashboard');
+        // Force navigation to dashboard
+        navigate('/dashboard', { replace: true });
       }
     } catch (error: any) {
       toast({
