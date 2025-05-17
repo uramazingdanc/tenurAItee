@@ -14,6 +14,7 @@ import Auth from "./pages/Auth";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 
+// Create a query client with default options
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
