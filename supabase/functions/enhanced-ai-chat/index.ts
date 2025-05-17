@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
@@ -63,16 +62,40 @@ async function findRelevantKnowledgeArticles(message: string, supabase: any) {
 }
 
 // Generate chat suggestions based on OpenAI response
-function generateChatSuggestions(message: string, aiResponse: string) {
-  // If the AI response already contains suggestions, we can extract them
-  // This is a fallback if the AI doesn't provide good suggestions
-  
-  const defaultSuggestions = [
-    { id: "1", text: "Show me training scenarios" },
-    { id: "2", text: "How do I improve my customer satisfaction score?" },
-    { id: "3", text: "What are best practices for handling angry customers?" }
-  ];
-  
+function generateChatSuggestions(message: string, aiResponse: string, userContext?: any) {
+  // If we have user context (progress, performance data, etc.)
+  if (userContext) {
+    // Generate suggestions that are personalized to the user's progress
+    const weakAreas = userContext.improvement_areas || [];
+    const completedScenarios = userContext.completedScenarios || [];
+    
+    // If user has weak areas in customer satisfaction or empathy
+    if (weakAreas.includes("customer_satisfaction") || weakAreas.includes("empathy")) {
+      return [
+        { id: "p1", text: "How can I improve my empathy in calls?" },
+        { id: "p2", text: "Show me scripts for handling upset customers" },
+        { id: "p3", text: "What phrases should I avoid with angry customers?" }
+      ];
+    }
+    
+    // If user has weak areas in knowledge or accuracy
+    if (weakAreas.includes("product_knowledge") || weakAreas.includes("response_accuracy")) {
+      return [
+        { id: "k1", text: "Show me the latest refund policy" },
+        { id: "k2", text: "What exceptions apply to the 24-hour cancellation policy?" },
+        { id: "k3", text: "How do I handle refund requests for premium tickets?" }
+      ];
+    }
+    
+    // Default scenario suggestions
+    return [
+      { id: "s1", text: "I'd like to practice a refund scenario" },
+      { id: "s2", text: "Help me prepare for difficult customer interactions" },
+      { id: "s3", text: "How can I improve my last call score?" }
+    ];
+  }
+
+  // Default suggestions (original behavior if no user context)
   const messageLower = message.toLowerCase();
   
   if (messageLower.includes('cancel') || messageLower.includes('flight')) {
@@ -92,11 +115,67 @@ function generateChatSuggestions(message: string, aiResponse: string) {
     ];
   }
   
-  return defaultSuggestions;
+  return [
+    { id: "1", text: "Show me training scenarios" },
+    { id: "2", text: "How do I improve my customer satisfaction score?" },
+    { id: "3", text: "What are best practices for handling angry customers?" }
+  ];
+}
+
+// Generate AI insights based on user performance data
+async function generateAIInsights(message: string, userContext: any, openAIApiKey: string) {
+  if (!userContext) return null;
+  
+  try {
+    const promptForInsights = `
+      You are an AI coaching assistant for customer service agents.
+      
+      Agent Performance Data:
+      - Name: ${userContext.name || "Agent"} 
+      - Experience Level: ${userContext.current_level || "1"} 
+      - Recent Score: ${userContext.last_score || "N/A"}
+      - Strengths: ${userContext.strengths?.join(", ") || "N/A"}
+      - Areas for Improvement: ${userContext.improvement_areas?.join(", ") || "N/A"}
+      - Recent call topics: ${userContext.recent_topics?.join(", ") || "refunds, cancellations"}
+      
+      Based on this user's message: "${message}"
+      
+      Generate ONE specific, actionable insight to help this agent improve their skills.
+      Make it personalized, specific, and directly related to their performance data.
+      Keep it under 2 sentences and be encouraging.
+    `;
+    
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${openAIApiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: promptForInsights },
+          { role: 'user', content: message }
+        ],
+        temperature: 0.7,
+        max_tokens: 100
+      })
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      return data.choices[0].message.content.trim();
+    }
+    
+    return null;
+  } catch (error) {
+    console.error("Error generating insights:", error);
+    return null;
+  }
 }
 
 // Generate AI response using OpenAI GPT-4o mini
-async function generateAIResponse(message: string, history: any[], knowledgeArticles: any[]) {
+async function generateAIResponse(message: string, history: any[], knowledgeArticles: any[], userContext?: any) {
   const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
   
   if (!OPENAI_API_KEY) {
@@ -113,11 +192,24 @@ async function generateAIResponse(message: string, history: any[], knowledgeArti
     
     // Create system message with context for the AI
     let systemMessage = 
-      "You are an AI coach for customer service training. " +
+      "You are an AI coach for customer service training named 'Tenured AI Assistant'. " +
       "You help customer service agents improve their skills through interactive training. " +
       "Your tone is professional, supportive, and encouraging. " +
       "Provide concise, helpful advice based on best practices in customer service. " +
       "Focus on de-escalation, empathy, and effective problem-solving techniques.";
+    
+    // Add personalized context if available
+    if (userContext) {
+      systemMessage += `\n\nAgent Context:
+      - Name: ${userContext.name || "Agent"} 
+      - Experience Level: ${userContext.current_level || 1}
+      - Recent Performance: ${userContext.last_score ? userContext.last_score + "%" : "No recent data"}
+      - Strengths: ${userContext.strengths?.join(", ") || "Not enough data"}
+      - Areas for Improvement: ${userContext.improvement_areas?.join(", ") || "Not enough data"}
+      
+      When providing advice, focus specifically on helping them improve their weak areas.
+      `;
+    }
     
     // If we have knowledge articles, include them in the system message
     if (knowledgeArticles.length > 0) {
@@ -275,6 +367,66 @@ async function updateUserProgress(supabase: any, userId: string, xpToAdd: number
   }
 }
 
+// Fetch user context for personalization
+async function fetchUserContext(supabase: any, userId: string) {
+  try {
+    // Get user's profile
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+      
+    if (profileError) throw profileError;
+    
+    // Get user's progress
+    const { data: progressData, error: progressError } = await supabase
+      .from('agent_progress')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+      
+    if (progressError && progressError.code !== 'PGRST116') throw progressError;
+    
+    // Get user's performance data
+    const { data: performanceData, error: performanceError } = await supabase
+      .from('agent_performance')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+      
+    if (performanceError && performanceError.code !== 'PGRST116') throw performanceError;
+    
+    // Get user's completed scenarios
+    const { data: completedScenarios, error: scenariosError } = await supabase
+      .from('user_progress')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('completed', true)
+      .order('completed_at', { ascending: false })
+      .limit(5);
+      
+    if (scenariosError && scenariosError.code !== 'PGRST116') throw scenariosError;
+    
+    // Create a consolidated context object
+    const userContext = {
+      name: profileData?.full_name || profileData?.email || "Agent",
+      current_level: progressData?.current_level || 1,
+      last_score: performanceData?.customer_satisfaction || null,
+      strengths: performanceData?.strengths || [],
+      improvement_areas: performanceData?.improvement_areas || [],
+      completedScenarios: completedScenarios || [],
+    };
+    
+    return userContext;
+  } catch (error) {
+    console.error("Error fetching user context:", error);
+    return null;
+  }
+}
+
 // Main handler function
 serve(async (req) => {
   // Handle CORS
@@ -285,6 +437,7 @@ serve(async (req) => {
   const supabaseUrl = Deno.env.get("SUPABASE_URL") as string;
   const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") as string;
   const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
+  const openAIApiKey = Deno.env.get("OPENAI_API_KEY") as string;
   
   // For authenticating the user
   const authHeader = req.headers.get('Authorization');
@@ -318,7 +471,8 @@ serve(async (req) => {
     const { 
       message, 
       history = [],
-      sessionId = crypto.randomUUID()
+      sessionId = crypto.randomUUID(),
+      includeUserContext = false
     } = await req.json();
     
     if (!message) {
@@ -327,6 +481,12 @@ serve(async (req) => {
     
     // Update the user's XP and streak
     await updateUserProgress(supabaseAdmin, user.id);
+    
+    // Fetch user context for personalization if requested
+    let userContext = null;
+    if (includeUserContext) {
+      userContext = await fetchUserContext(supabaseAdmin, user.id);
+    }
     
     // Find relevant knowledge articles
     const knowledgeArticles = await findRelevantKnowledgeArticles(message, supabaseAdmin);
@@ -341,10 +501,16 @@ serve(async (req) => {
     );
     
     // Generate AI response using OpenAI
-    const aiResponse = await generateAIResponse(message, history, knowledgeArticles);
+    const aiResponse = await generateAIResponse(message, history, knowledgeArticles, userContext);
+    
+    // Generate AI insights if user context is available
+    let insights = null;
+    if (userContext) {
+      insights = await generateAIInsights(message, userContext, openAIApiKey);
+    }
     
     // Generate chat suggestions based on the AI response and message
-    const suggestions = generateChatSuggestions(message, aiResponse);
+    const suggestions = generateChatSuggestions(message, aiResponse, userContext);
     
     // Record the assistant's response
     await recordChatMessage(
@@ -362,6 +528,7 @@ serve(async (req) => {
         response: aiResponse,
         suggestions: suggestions.map(s => s.text),
         kb_articles: knowledgeArticles,
+        insights,
         sessionId
       }),
       { 

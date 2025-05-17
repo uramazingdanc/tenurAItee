@@ -34,10 +34,13 @@ const Dashboard = () => {
     }
   };
 
-  // Show AI chat widget only in dashboard pages
-  const showChatWidget = ["/chat-simulation", "/knowledge", "/videos", "/scenarios"].some(
-    route => path === route || path.startsWith(route + "/")
-  ) || path === "/dashboard";
+  // Only show standalone AI chat widget in non-dashboard pages
+  // For the main dashboard we're using the integrated TenuredAIAssistant
+  const showChatWidget = path !== "/" && 
+                         path !== "/dashboard" &&
+                         ["/chat-simulation", "/knowledge", "/videos", "/scenarios"].some(
+                           route => path === route || path.startsWith(route + "/")
+                         );
 
   return (
     <div className="min-h-screen bg-gray-50 pt-20">
