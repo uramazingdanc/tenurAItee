@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 // Types for dashboard data
@@ -47,7 +48,7 @@ export interface AgentProgressData {
   requiredXp: number;
   streak: number;
   nextReward: string;
-  xp_points?: number; // Add this property to match what DashboardSidebar is using
+  xp_points?: number; // Keep this for backward compatibility
 }
 
 export interface Recommendation {

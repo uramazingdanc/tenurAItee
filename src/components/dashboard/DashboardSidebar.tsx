@@ -16,7 +16,7 @@ const DashboardSidebar = ({ progressData, recommendations, performance }: Dashbo
       {/* User Progress Card */}
       <UserProgressCard 
         label="XP Progress" 
-        value={progressData.currentXp || 0}  // Use currentXp instead of xp_points
+        value={progressData.currentXp || progressData.xp_points || 0}
         icon="✨"
       />
       

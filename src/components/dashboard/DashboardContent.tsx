@@ -19,6 +19,15 @@ interface DashboardContentProps {
 }
 
 const DashboardContent = ({ dashboardData, userStats }: DashboardContentProps) => {
+  // Convert dashboardData progress to expected format for ProgressSection
+  const progressData: any = {
+    level: dashboardData.progress?.current_level || 1,
+    currentXp: dashboardData.progress?.xp_points || 0,
+    requiredXp: (dashboardData.progress?.current_level || 1) * 100,
+    streak: dashboardData.progress?.current_streak || 0,
+    nextReward: "Badge"
+  };
+
   return (
     <>
       <div className="mb-8">
@@ -94,7 +103,7 @@ const DashboardContent = ({ dashboardData, userStats }: DashboardContentProps) =
         
         <TabsContent value="progress">
           <ProgressSection 
-            xpProgress={dashboardData.progress} 
+            xpProgress={progressData} 
           />
         </TabsContent>
         
