@@ -85,6 +85,13 @@ const Dashboard = () => {
     );
   }
 
+  // Mock stats data since it's not in the actual data structure
+  const userStats = {
+    scenariosCompleted: dashboardData.completedScenarios?.length || 0,
+    badgesEarned: dashboardData.achievements?.length || 0,
+    avgRating: 4.8
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 pt-20">
       <motion.div 
@@ -99,8 +106,14 @@ const Dashboard = () => {
           <div className="lg:col-span-2 space-y-6">
             {/* Progress Section */}
             <ProgressSection 
-              progress={dashboardData.progress} 
-              userStats={dashboardData.stats} 
+              progress={{
+                level: dashboardData.progress.current_level,
+                currentXp: dashboardData.progress.xp_points,
+                requiredXp: (dashboardData.progress.current_level + 1) * 100,
+                streak: dashboardData.progress.current_streak,
+                nextReward: "New Badge"
+              }}
+              userStats={userStats}
             />
 
             {/* Tabs Section */}
@@ -119,8 +132,17 @@ const Dashboard = () => {
                   </CardHeader>
                   <CardContent>
                     <ScenariosList 
-                      completedScenarios={dashboardData.scenarios.completed}
-                      inProgressScenarios={dashboardData.scenarios.inProgress}
+                      completedScenarios={dashboardData.completedScenarios.map(s => ({
+                        id: s.scenarios.id,
+                        title: s.scenarios.title,
+                        description: s.scenarios.description,
+                        difficulty: s.scenarios.difficulty as "Beginner" | "Intermediate" | "Advanced",
+                        category: s.scenarios.category,
+                        status: "completed" as const,
+                        score: s.score || undefined,
+                        feedback: s.feedback
+                      }))}
+                      inProgressScenarios={[]} // No in-progress scenarios in the data yet
                     />
                   </CardContent>
                 </Card>
@@ -133,7 +155,15 @@ const Dashboard = () => {
                     <CardDescription>Badges and rewards you've earned</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <AchievementsList achievements={dashboardData.achievements} />
+                    <AchievementsList achievements={dashboardData.achievements.map(a => ({
+                      id: a.achievements.id,
+                      name: a.achievements.name,
+                      description: a.achievements.description,
+                      icon: a.achievements.icon,
+                      category: a.achievements.category,
+                      unlocked: true,
+                      earnedAt: new Date(a.earned_at).toLocaleDateString()
+                    }))} />
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -145,7 +175,6 @@ const Dashboard = () => {
                     <CardDescription>Follow this path to mastery</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    {/* Fix: Removed the level prop since it's not expected in LearningPathList */}
                     <LearningPathList />
                   </CardContent>
                 </Card>
@@ -156,11 +185,24 @@ const Dashboard = () => {
           <div className="space-y-6">
             {/* User Progress Card */}
             <UserProgressCard 
-              xpProgress={dashboardData.progress}
+              xpProgress={{
+                level: dashboardData.progress.current_level,
+                currentXp: dashboardData.progress.xp_points,
+                requiredXp: (dashboardData.progress.current_level + 1) * 100,
+                streak: dashboardData.progress.current_streak,
+                nextReward: "Premium Badge"
+              }}
             />
             
             {/* Recommendations */}
-            <RecommendationsList recommendations={dashboardData.recommendations} />
+            <RecommendationsList recommendations={dashboardData.recommendations.map(r => ({
+              id: r.id,
+              title: r.title,
+              description: r.description,
+              type: (r.type || "practice") as "video" | "article" | "practice",
+              duration: r.difficulty === "Beginner" ? "5 min" : 
+                      r.difficulty === "Intermediate" ? "10 min" : "15 min"
+            }))} />
             
             {/* Performance Stats */}
             <PerformanceStats performance={dashboardData.performance} />

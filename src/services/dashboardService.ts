@@ -1,6 +1,56 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
+export interface Achievement {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  category: string;
+  unlocked: boolean;
+  earnedAt?: string;
+}
+
+export interface Scenario {
+  id: string;
+  title: string;
+  description: string;
+  difficulty: "Beginner" | "Intermediate" | "Advanced";
+  category: string;
+  status?: "completed" | "in-progress" | "locked";
+  completion?: number;
+  score?: number;
+  feedback?: string | null;
+}
+
+export interface Recommendation {
+  id: string;
+  title: string;
+  description: string;
+  type: "video" | "article" | "practice";
+  url?: string;
+  duration?: string;
+}
+
+export interface AgentPerformance {
+  response_accuracy: number;
+  issue_resolution_rate: number;
+  customer_satisfaction: number;
+  improvement_areas: Array<{
+    id: string;
+    title: string;
+    description?: string;
+  }>;
+}
+
+export interface AgentProgressData {
+  level: number;
+  currentXp: number;
+  requiredXp: number;
+  streak: number;
+  nextReward: string;
+}
+
 export interface DashboardData {
   profile: {
     id: string;
@@ -14,12 +64,7 @@ export interface DashboardData {
     current_streak: number;
     last_activity_date: string;
   };
-  performance: {
-    response_accuracy: number;
-    issue_resolution_rate: number;
-    customer_satisfaction: number;
-    improvement_areas: string[];
-  };
+  performance: AgentPerformance;
   completedScenarios: Array<{
     id: string;
     scenario_id: string;
@@ -52,6 +97,8 @@ export interface DashboardData {
     description: string;
     category: string;
     difficulty: string;
+    type: string;
+    duration?: string;
   }>;
   learningPath: Array<{
     name: string;
@@ -63,6 +110,15 @@ export interface DashboardData {
       category: string;
     }>;
   }>;
+  stats: {
+    scenariosCompleted: number;
+    badgesEarned: number;
+    avgRating: number;
+  };
+  scenarios: {
+    completed: Scenario[];
+    inProgress: Scenario[];
+  };
 }
 
 export const fetchDashboardData = async (): Promise<DashboardData> => {
@@ -120,6 +176,7 @@ export const formatDashboardStats = (dashboardData: DashboardData) => {
     description: item.achievements.description,
     icon: item.achievements.icon,
     category: item.achievements.category,
+    unlocked: true,
     earnedAt: new Date(item.earned_at).toLocaleDateString()
   })) || [];
 
@@ -129,7 +186,9 @@ export const formatDashboardStats = (dashboardData: DashboardData) => {
     title: item.title,
     description: item.description,
     category: item.category,
-    difficulty: item.difficulty
+    difficulty: item.difficulty,
+    type: item.type || "practice",
+    duration: item.duration
   })) || [];
 
   // Format learning path
@@ -143,7 +202,8 @@ export const formatDashboardStats = (dashboardData: DashboardData) => {
     difficulty: item.scenarios.difficulty,
     category: item.scenarios.category,
     score: item.score,
-    feedback: item.feedback
+    feedback: item.feedback,
+    status: "completed" as const
   })) || [];
 
   return {
