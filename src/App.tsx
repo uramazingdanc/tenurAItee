@@ -32,6 +32,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <Routes>
+            {/* Public routes */}
             <Route path="/" element={<Index />} />
             <Route path="/features" element={<Features />} />
             <Route path="/pricing" element={<Pricing />} />
