@@ -13,6 +13,7 @@ import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+import Navbar from "./components/Navbar";
 
 // Create a query client with default options
 const queryClient = new QueryClient({
@@ -32,6 +33,7 @@ const App = () => (
         <AuthProvider>
           <Toaster />
           <Sonner />
+          <Navbar />
           <Routes>
             {/* Public routes */}
             <Route path="/" element={<Index />} />
