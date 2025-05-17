@@ -14,7 +14,7 @@ export type Partner = {
   name: string;
   logo_url: string | null;
   website: string | null;
-  category: 'trusted_by' | 'backed_by' | 'other';
+  category: string;
 };
 
 export const fetchAboutInfo = async (): Promise<{
