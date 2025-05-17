@@ -9,6 +9,60 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      about: {
+        Row: {
+          created_at: string | null
+          id: string
+          mission: string
+          story: string
+          updated_at: string | null
+          vision: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          mission?: string
+          story?: string
+          updated_at?: string | null
+          vision?: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          mission?: string
+          story?: string
+          updated_at?: string | null
+          vision?: string
+        }
+        Relationships: []
+      }
+      faqs: {
+        Row: {
+          answer: string
+          category: string
+          created_at: string | null
+          id: string
+          question: string
+          updated_at: string | null
+        }
+        Insert: {
+          answer: string
+          category?: string
+          created_at?: string | null
+          id?: string
+          question: string
+          updated_at?: string | null
+        }
+        Update: {
+          answer?: string
+          category?: string
+          created_at?: string | null
+          id?: string
+          question?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       knowledge_items: {
         Row: {
           category: string
@@ -35,6 +89,98 @@ export type Database = {
           id?: string
           is_premium?: boolean | null
           title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      partners: {
+        Row: {
+          category: string
+          created_at: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          updated_at: string | null
+          website: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          updated_at?: string | null
+          website?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          updated_at?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
+      plan_features: {
+        Row: {
+          created_at: string | null
+          feature: string
+          id: string
+          plan_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          feature: string
+          id?: string
+          plan_id: string
+        }
+        Update: {
+          created_at?: string | null
+          feature?: string
+          id?: string
+          plan_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_features_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "pricing_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pricing_plans: {
+        Row: {
+          created_at: string | null
+          description: string
+          id: string
+          is_custom: boolean
+          most_popular: boolean
+          name: string
+          price: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string
+          id?: string
+          is_custom?: boolean
+          most_popular?: boolean
+          name: string
+          price?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          id?: string
+          is_custom?: boolean
+          most_popular?: boolean
+          name?: string
+          price?: number | null
           updated_at?: string | null
         }
         Relationships: []
@@ -95,6 +241,36 @@ export type Database = {
           id?: string
           is_premium?: boolean | null
           title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      team_members: {
+        Row: {
+          bio: string
+          created_at: string | null
+          id: string
+          image_url: string | null
+          name: string
+          role: string
+          updated_at: string | null
+        }
+        Insert: {
+          bio?: string
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          name: string
+          role: string
+          updated_at?: string | null
+        }
+        Update: {
+          bio?: string
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          role?: string
           updated_at?: string | null
         }
         Relationships: []

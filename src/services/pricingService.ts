@@ -22,7 +22,16 @@ export const fetchPricingPlans = async (): Promise<PricingPlan[]> => {
     throw error;
   }
   
-  return data || [];
+  // Fetch features for each plan and attach them
+  const plansWithFeatures = await Promise.all((data || []).map(async (plan) => {
+    const features = await fetchPlanFeatures(plan.id);
+    return {
+      ...plan,
+      features
+    };
+  }));
+  
+  return plansWithFeatures;
 };
 
 export const fetchPlanFeatures = async (planId: string): Promise<string[]> => {
