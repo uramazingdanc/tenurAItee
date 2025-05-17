@@ -47,6 +47,7 @@ export interface AgentProgressData {
   requiredXp: number;
   streak: number;
   nextReward: string;
+  xp_points?: number; // Add this property to match what DashboardSidebar is using
 }
 
 export interface Recommendation {
