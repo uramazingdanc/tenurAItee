@@ -6,84 +6,195 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
-const knowledgeCategories = [
-  {
-    id: "basics",
-    name: "Customer Service Basics",
-    articles: [
-      {
-        id: 1,
-        title: "Active Listening Techniques",
-        excerpt: "Learn how to effectively listen to customers to understand their needs and concerns.",
-        tags: ["Communication", "Beginner"]
-      },
-      {
-        id: 2,
-        title: "De-escalation Strategies",
-        excerpt: "Techniques to calm upset customers and resolve conflicts professionally.",
-        tags: ["Conflict Resolution", "Intermediate"]
-      },
-      {
-        id: 3,
-        title: "Building Customer Rapport",
-        excerpt: "How to establish trust and positive relationships with customers.",
-        tags: ["Communication", "Beginner"]
-      }
-    ]
-  },
-  {
-    id: "travel",
-    name: "Travel Industry Knowledge",
-    articles: [
-      {
-        id: 4,
-        title: "Flight Cancellation Policies",
-        excerpt: "Understanding airline policies for cancellations and refunds.",
-        tags: ["Policies", "Intermediate"]
-      },
-      {
-        id: 5,
-        title: "Booking Modification Procedures",
-        excerpt: "Step-by-step guide for handling customer booking changes.",
-        tags: ["Procedures", "Intermediate"]
-      },
-      {
-        id: 6,
-        title: "Travel Insurance Coverage",
-        excerpt: "Overview of travel insurance options and what they cover.",
-        tags: ["Insurance", "Advanced"]
-      }
-    ]
-  },
-  {
-    id: "advanced",
-    name: "Advanced Techniques",
-    articles: [
-      {
-        id: 7,
-        title: "Handling Multiple Customer Concerns",
-        excerpt: "How to address multiple issues during a single customer interaction.",
-        tags: ["Problem Solving", "Advanced"]
-      },
-      {
-        id: 8,
-        title: "Personalization Strategies",
-        excerpt: "Techniques for tailoring customer interactions for better experiences.",
-        tags: ["Customer Experience", "Advanced"]
-      },
-      {
-        id: 9,
-        title: "Cultural Sensitivity in Customer Service",
-        excerpt: "Understanding and respecting cultural differences in customer interactions.",
-        tags: ["Communication", "Intermediate"]
-      }
-    ]
+type KnowledgeItem = {
+  id: string;
+  title: string;
+  content: string;
+  category: string;
+  is_premium: boolean | null;
+  tags?: string[];
+  excerpt?: string;
+};
+
+// Function to fetch knowledge items from Supabase
+const fetchKnowledgeItems = async (): Promise<KnowledgeItem[]> => {
+  const { data, error } = await supabase
+    .from('knowledge_items')
+    .select('*');
+  
+  if (error) {
+    console.error("Error fetching knowledge items:", error);
+    throw error;
   }
-];
+  
+  // Process the data to add excerpt and tags
+  return data.map(item => ({
+    ...item,
+    excerpt: generateExcerpt(item.content),
+    tags: generateTags(item.category, item.is_premium)
+  }));
+};
+
+// Helper to generate excerpt from content
+const generateExcerpt = (content: string): string => {
+  return content.length > 120 ? content.substring(0, 120) + '...' : content;
+};
+
+// Helper to generate tags based on category and premium status
+const generateTags = (category: string, isPremium: boolean | null): string[] => {
+  const tags = [category];
+  
+  // Add difficulty tag based on category
+  if (category === 'Cancellations' || category === 'Modifications') {
+    tags.push('Beginner');
+  } else if (category === 'Refunds') {
+    tags.push('Intermediate');
+  } else if (category === 'Conflict Resolution') {
+    tags.push('Advanced');
+  }
+  
+  // Add premium tag if applicable
+  if (isPremium) {
+    tags.push('Premium');
+  }
+  
+  return tags;
+};
+
+// Group knowledge items by category
+const groupByCategory = (items: KnowledgeItem[]): Record<string, KnowledgeItem[]> => {
+  const grouped: Record<string, KnowledgeItem[]> = {};
+  
+  items.forEach(item => {
+    if (!grouped[item.category]) {
+      grouped[item.category] = [];
+    }
+    grouped[item.category].push(item);
+  });
+  
+  return grouped;
+};
 
 const KnowledgeBase = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // Fetch knowledge items using react-query
+  const { data: knowledgeItems, isLoading, error } = useQuery({
+    queryKey: ['knowledgeItems'],
+    queryFn: fetchKnowledgeItems
+  });
+  
+  // Fallback knowledge categories
+  const fallbackKnowledgeCategories = [
+    {
+      id: "basics",
+      name: "Customer Service Basics",
+      articles: [
+        {
+          id: 1,
+          title: "Active Listening Techniques",
+          excerpt: "Learn how to effectively listen to customers to understand their needs and concerns.",
+          tags: ["Communication", "Beginner"]
+        },
+        {
+          id: 2,
+          title: "De-escalation Strategies",
+          excerpt: "Techniques to calm upset customers and resolve conflicts professionally.",
+          tags: ["Conflict Resolution", "Intermediate"]
+        },
+        {
+          id: 3,
+          title: "Building Customer Rapport",
+          excerpt: "How to establish trust and positive relationships with customers.",
+          tags: ["Communication", "Beginner"]
+        }
+      ]
+    },
+    {
+      id: "travel",
+      name: "Travel Industry Knowledge",
+      articles: [
+        {
+          id: 4,
+          title: "Flight Cancellation Policies",
+          excerpt: "Understanding airline policies for cancellations and refunds.",
+          tags: ["Policies", "Intermediate"]
+        },
+        {
+          id: 5,
+          title: "Booking Modification Procedures",
+          excerpt: "Step-by-step guide for handling customer booking changes.",
+          tags: ["Procedures", "Intermediate"]
+        },
+        {
+          id: 6,
+          title: "Travel Insurance Coverage",
+          excerpt: "Overview of travel insurance options and what they cover.",
+          tags: ["Insurance", "Advanced"]
+        }
+      ]
+    },
+    {
+      id: "advanced",
+      name: "Advanced Techniques",
+      articles: [
+        {
+          id: 7,
+          title: "Handling Multiple Customer Concerns",
+          excerpt: "How to address multiple issues during a single customer interaction.",
+          tags: ["Problem Solving", "Advanced"]
+        },
+        {
+          id: 8,
+          title: "Personalization Strategies",
+          excerpt: "Techniques for tailoring customer interactions for better experiences.",
+          tags: ["Customer Experience", "Advanced"]
+        },
+        {
+          id: 9,
+          title: "Cultural Sensitivity in Customer Service",
+          excerpt: "Understanding and respecting cultural differences in customer interactions.",
+          tags: ["Communication", "Intermediate"]
+        }
+      ]
+    }
+  ];
+
+  let categorizedContent;
+  let categories: {id: string, name: string}[] = [];
+
+  // If we have data from Supabase, process it
+  if (knowledgeItems && knowledgeItems.length > 0) {
+    const groupedItems = groupByCategory(knowledgeItems);
+    categories = Object.keys(groupedItems).map(category => ({
+      id: category.toLowerCase().replace(/\s+/g, '-'),
+      name: category
+    }));
+    categorizedContent = groupedItems;
+  } else {
+    // Use fallback data
+    categorizedContent = fallbackKnowledgeCategories.reduce((acc: Record<string, KnowledgeItem[]>, category) => {
+      acc[category.id] = category.articles.map(article => ({
+        id: article.id.toString(),
+        title: article.title,
+        content: article.excerpt,
+        excerpt: article.excerpt,
+        category: category.id,
+        is_premium: category.id === 'advanced', // Example logic
+        tags: article.tags
+      }));
+      return acc;
+    }, {});
+    categories = fallbackKnowledgeCategories;
+  }
+
+  // If there's an error, log it but don't disrupt the UI
+  if (error) {
+    console.error("Failed to load knowledge items:", error);
+  }
 
   return (
     <section className="py-16 bg-gray-50" id="knowledge">
@@ -114,18 +225,18 @@ const KnowledgeBase = () => {
           </div>
         </div>
 
-        <Tabs defaultValue="basics" className="max-w-4xl mx-auto">
+        <Tabs defaultValue={categories.length > 0 ? categories[0].id : "basics"} className="max-w-4xl mx-auto">
           <TabsList className="grid grid-cols-3 mb-8">
-            {knowledgeCategories.map((category) => (
+            {categories.map((category) => (
               <TabsTrigger key={category.id} value={category.id}>
                 {category.name}
               </TabsTrigger>
             ))}
           </TabsList>
           
-          {knowledgeCategories.map((category) => (
+          {categories.map((category) => (
             <TabsContent key={category.id} value={category.id} className="space-y-6">
-              {category.articles.map((article) => (
+              {categorizedContent[category.id]?.map((article) => (
                 <Card key={article.id} className="card-hover overflow-hidden">
                   <CardHeader className="pb-3">
                     <CardTitle>{article.title}</CardTitle>
@@ -136,7 +247,7 @@ const KnowledgeBase = () => {
                   <Separator />
                   <CardFooter className="pt-3 flex justify-between">
                     <div className="flex space-x-2">
-                      {article.tags.map((tag, index) => (
+                      {article.tags?.map((tag, index) => (
                         <Badge key={index} variant="outline" className="bg-gray-100">
                           {tag}
                         </Badge>
