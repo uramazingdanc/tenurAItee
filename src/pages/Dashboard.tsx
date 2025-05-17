@@ -19,7 +19,13 @@ const Dashboard = () => {
     if (path === "/knowledge") {
       return <KnowledgeBase />;
     } else if (path === "/videos") {
-      return <VideoHub />;
+      // Ensure VideoHub is rendered when on the videos route
+      return (
+        <div className="container mx-auto px-4 py-8">
+          <h1 className="text-2xl font-bold mb-6">Video Learning Hub</h1>
+          <VideoHub />
+        </div>
+      );
     } else if (path === "/scenarios" || path.startsWith("/scenarios/")) {
       return <CallSimulation />;
     } else if (path === "/chat-simulation") {

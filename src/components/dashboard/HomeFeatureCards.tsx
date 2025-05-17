@@ -3,9 +3,11 @@ import React from "react";
 import { FileText, Phone, Play, MessageSquare } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion } from "@/components/ui/motion";
+import { useNavigate } from "react-router-dom";
 
 const HomeFeatureCards = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   
   const features = [
     {
@@ -38,6 +40,10 @@ const HomeFeatureCards = () => {
     }
   ];
 
+  const handleFeatureClick = (link) => {
+    navigate(link);
+  };
+
   return (
     <div className="py-8">
       <motion.div 
@@ -61,17 +67,16 @@ const HomeFeatureCards = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: index * 0.1 }}
+            onClick={() => handleFeatureClick(feature.link)}
+            className="cursor-pointer"
           >
-            <a 
-              href={feature.link}
-              className="block h-full border rounded-lg p-6 bg-white hover:shadow-md transition-all duration-300"
-            >
+            <div className="block h-full border rounded-lg p-6 bg-white hover:shadow-md transition-all duration-300">
               <div className={`w-12 h-12 ${feature.iconBg} rounded-full flex items-center justify-center mb-4`}>
                 {feature.icon}
               </div>
               <h3 className="text-lg font-semibold text-gray-800 mb-2">{feature.title}</h3>
               <p className="text-gray-600 text-sm">{feature.description}</p>
-            </a>
+            </div>
           </motion.div>
         ))}
       </div>
