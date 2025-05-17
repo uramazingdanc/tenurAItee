@@ -15,6 +15,10 @@ const DashboardHeader = ({ user }: DashboardHeaderProps) => {
   const userName = user?.user_metadata?.full_name || 'John Smith';
   const userInitials = userName.split(' ').map(name => name[0]).join('') || 'JS';
   
+  const handleSettingsClick = () => {
+    navigate('/settings');
+  };
+  
   return (
     <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
       <div>
@@ -36,10 +40,12 @@ const DashboardHeader = ({ user }: DashboardHeaderProps) => {
         </motion.p>
       </div>
       <div className="mt-4 md:mt-0 flex items-center">
-        <div onClick={() => navigate('/profile')}>
-          <UserProfileHeader userName={userName} userInitials={userInitials} />
-        </div>
-        <Button variant="outline" onClick={() => navigate('/settings')}>
+        <UserProfileHeader 
+          userName={userName} 
+          userInitials={userInitials}
+          onProfileClick={() => navigate('/profile')} 
+        />
+        <Button variant="outline" onClick={handleSettingsClick}>
           <Settings className="h-4 w-4 mr-2" />
           Settings
         </Button>

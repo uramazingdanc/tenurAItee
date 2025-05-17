@@ -8,11 +8,15 @@ import { toast } from "@/components/ui/sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { SCENARIOS } from "@/services/callScenarioService";
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
+import { useNavigate } from "react-router-dom";
 
 const RecommendedScenarios = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [recommendations, setRecommendations] = useState([]);
+  const [showPrerequisiteModal, setShowPrerequisiteModal] = useState<{show: boolean, scenario?: any}>({show: false});
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   // Fetch recommendations from backend if user is logged in
   useEffect(() => {
@@ -31,7 +35,9 @@ const RecommendedScenarios = () => {
             id: s.id,
             title: s.title,
             description: s.description,
-            category: s.difficulty
+            category: s.difficulty,
+            locked: s.id !== "flightCancellation",
+            requiredPrerequisites: s.id === "refundRequest" ? ["Booking Modification"] : []
           })));
         }
       } catch (error) {
@@ -45,7 +51,9 @@ const RecommendedScenarios = () => {
           id: s.id,
           title: s.title,
           description: s.description,
-          category: s.difficulty
+          category: s.difficulty,
+          locked: s.id !== "flightCancellation",
+          requiredPrerequisites: s.id === "refundRequest" ? ["Booking Modification"] : []
         })));
       } finally {
         setIsLoading(false);
@@ -69,6 +77,27 @@ const RecommendedScenarios = () => {
     }
   };
 
+  const handleScenarioClick = (scenario: any) => {
+    if (scenario.locked) {
+      setShowPrerequisiteModal({
+        show: true,
+        scenario
+      });
+      return;
+    }
+    
+    // Navigate to scenario
+    toast.info(`Loading ${scenario.title}...`, {
+      description: "Preparing your simulation"
+    });
+    navigate(`/scenarios/${scenario.id}`);
+  };
+
+  const handleViewLearningPath = () => {
+    setShowPrerequisiteModal({show: false});
+    navigate('/dashboard?tab=learning-path');
+  };
+
   // Use recommendations from backend, or default to SCENARIOS if not available
   const displayScenarios = recommendations.length > 0 ? 
     recommendations : 
@@ -76,7 +105,9 @@ const RecommendedScenarios = () => {
       id: s.id,
       title: s.title,
       description: s.description,
-      category: s.difficulty
+      category: s.difficulty,
+      locked: s.id !== "flightCancellation",
+      requiredPrerequisites: s.id === "refundRequest" ? ["Booking Modification"] : []
     }));
 
   return (
@@ -98,13 +129,13 @@ const RecommendedScenarios = () => {
             const ScenarioIcon = getScenarioIcon(scenario.id);
             
             return (
-              <Link to={`/dashboard#simulation`} key={scenario.id}>
+              <div key={scenario.id} onClick={() => handleScenarioClick(scenario)}>
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: index * 0.1 }}
                 >
-                  <Card className="p-4 border hover:border-brand-blue hover:shadow-sm transition-all duration-200">
+                  <Card className="p-4 border hover:border-brand-blue hover:shadow-sm transition-all duration-200 cursor-pointer">
                     <div className="flex items-center">
                       <div className={`h-12 w-12 flex items-center justify-center rounded-md ${
                         scenario.category === "Beginner" ? "bg-green-50" : 
@@ -116,7 +147,12 @@ const RecommendedScenarios = () => {
                         }`} />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-gray-800">{scenario.title}</h3>
+                        <h3 className="font-semibold text-gray-800">
+                          {scenario.title}
+                          {scenario.locked && (
+                            <span className="ml-2 text-xs bg-gray-200 px-1.5 py-0.5 rounded text-gray-600">Locked</span>
+                          )}
+                        </h3>
                         <p className="text-sm text-gray-600">
                           Practice scenario • {SCENARIOS.find(s => s.id === scenario.id)?.duration || 5} min
                         </p>
@@ -124,11 +160,35 @@ const RecommendedScenarios = () => {
                     </div>
                   </Card>
                 </motion.div>
-              </Link>
+              </div>
             );
           })}
         </div>
       )}
+      
+      {/* Prerequisites Modal */}
+      <AlertDialog 
+        open={showPrerequisiteModal.show} 
+        onOpenChange={(open) => setShowPrerequisiteModal({show: open})}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Complete Prerequisites First</AlertDialogTitle>
+            <AlertDialogDescription>
+              You need to complete the following scenarios before accessing "{showPrerequisiteModal.scenario?.title}":
+              <ul className="list-disc pl-5 mt-2">
+                {showPrerequisiteModal.scenario?.requiredPrerequisites.map((prereq: string, i: number) => (
+                  <li key={i} className="text-sm">{prereq}</li>
+                ))}
+              </ul>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Close</AlertDialogCancel>
+            <AlertDialogAction onClick={handleViewLearningPath}>View Learning Path</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

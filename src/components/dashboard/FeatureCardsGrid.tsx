@@ -19,35 +19,44 @@ const FeatureCardsGrid = () => {
   const defaultFeatures = [
     {
       icon: FileText,
-      title: "RAG-Powered Knowledge Base",
-      description: "Access comprehensive knowledge base powered by Retrieval Augmented Generation to learn best practices for customer service.",
+      title: "RAG-based Training",
+      description: "Training based on retrieval augmented generation",
       linkTo: "/knowledge",
       iconColor: "text-blue-600",
-      iconBgColor: "bg-blue-100"
+      iconBgColor: "bg-blue-100",
+      apiEndpoint: "/training/rag",
+      isLocked: false
     },
     {
       icon: Phone,
-      title: "Mock Call Scenarios",
-      description: "Practice handling customer inquiries through interactive simulations with ElevenLabs voice synthesis technology.",
+      title: "Mock Call Experience",
+      description: "Practice handling customer inquiries",
       linkTo: "/scenarios",
       iconColor: "text-green-600",
-      iconBgColor: "bg-green-100"
+      iconBgColor: "bg-green-100",
+      apiEndpoint: "/simulator/start",
+      isLocked: false
     },
     {
       icon: Play,
-      title: "Video Learning Hub",
-      description: "Learn from watching recorded calls of tenured agents handling different customer service scenarios.",
+      title: "Tenured Agent Videos",
+      description: "Learn from watching experienced agents",
       linkTo: "/videos",
       iconColor: "text-purple-600",
-      iconBgColor: "bg-purple-100"
+      iconBgColor: "bg-purple-100",
+      apiEndpoint: "/media/videos",
+      isLocked: false
     },
     {
       icon: MessageSquare,
       title: "Guided Simulations",
-      description: "Experience step-by-step guided simulations with our AI assistant that provides real-time feedback and suggestions.",
+      description: "Step-by-step guided call simulations",
       linkTo: "/chat-simulation",
       iconColor: "text-orange-600",
-      iconBgColor: "bg-orange-100"
+      iconBgColor: "bg-orange-100",
+      apiEndpoint: "/user/current_scenario",
+      isLocked: user?.id ? false : true, // Lock for non-authenticated users
+      requiredPrerequisites: ["Basic Training"] 
     }
   ];
 
@@ -56,10 +65,11 @@ const FeatureCardsGrid = () => {
     ? features.map(f => {
         // Map icons based on feature name
         const getIcon = (name) => {
-          if (name.toLowerCase().includes('knowledge')) return FileText;
+          if (name.toLowerCase().includes('knowledge') || name.toLowerCase().includes('rag')) return FileText;
           if (name.toLowerCase().includes('call') || name.toLowerCase().includes('scenario')) return Phone;
           if (name.toLowerCase().includes('video')) return Play;
-          if (name.toLowerCase().includes('assistant') || name.toLowerCase().includes('chat')) return MessageSquare;
+          if (name.toLowerCase().includes('assistant') || name.toLowerCase().includes('chat') || 
+              name.toLowerCase().includes('guide')) return MessageSquare;
           return FileText; // Default
         };
         
@@ -69,7 +79,10 @@ const FeatureCardsGrid = () => {
           description: f.description,
           linkTo: f.linkTo || "/dashboard",
           iconColor: f.iconColor || "text-blue-600",
-          iconBgColor: f.iconBgColor || "bg-blue-100"
+          iconBgColor: f.iconBgColor || "bg-blue-100",
+          apiEndpoint: f.apiEndpoint,
+          isLocked: f.isLocked || false,
+          requiredPrerequisites: f.requiredPrerequisites || []
         };
       })
     : defaultFeatures;
@@ -106,6 +119,9 @@ const FeatureCardsGrid = () => {
             linkTo={feature.linkTo}
             iconColor={feature.iconColor}
             iconBgColor={feature.iconBgColor}
+            isLocked={feature.isLocked}
+            requiredPrerequisites={feature.requiredPrerequisites}
+            apiEndpoint={feature.apiEndpoint}
           />
         ))}
       </div>
