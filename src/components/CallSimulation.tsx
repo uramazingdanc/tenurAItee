@@ -3,7 +3,7 @@ import { useRef, useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { XCircle, Loader2 } from "lucide-react";
+import { XCircle, Loader2, ArrowRight } from "lucide-react";
 import { SCENARIOS } from "@/services/callScenarioService";
 import { useCallSimulation } from "@/hooks/useCallSimulation";
 import ScenarioSelection from "./call-simulation/ScenarioSelection";
@@ -13,7 +13,7 @@ import ScoreDisplay from "./call-simulation/ScoreDisplay";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/components/ui/sonner";
 
-const CallSimulation = () => {
+const CallSimulation = ({ isGuidedMode = false }) => {
   const {
     state,
     audioRef,
@@ -27,6 +27,7 @@ const CallSimulation = () => {
   
   const { user } = useAuth();
   const [isInitializing, setIsInitializing] = useState(false);
+  const [currentGuidedScenarioIndex, setCurrentGuidedScenarioIndex] = useState(0);
 
   const { 
     isPlaying, 
@@ -41,6 +42,13 @@ const CallSimulation = () => {
     passThreshold,
     unlockedScenarios
   } = state;
+
+  // Define guided scenarios in order of progression
+  const guidedScenarios = [
+    SCENARIOS.find(s => s.id === "flightCancellation"),
+    SCENARIOS.find(s => s.id === "bookingModification"),
+    SCENARIOS.find(s => s.id === "refundRequest")
+  ].filter(Boolean);
 
   // Function to handle the "Try a Mock Call Simulation" CTA click
   const handleTrySimulationClick = async () => {
@@ -62,14 +70,21 @@ const CallSimulation = () => {
       // Wait a bit to simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // Get the first available scenario
-      const firstAvailableScenario = SCENARIOS.find(s => 
-        unlockedScenarios.includes(s.id) || s.id === "flightCancellation"
-      );
+      let targetScenario;
       
-      if (firstAvailableScenario) {
+      if (isGuidedMode) {
+        // In guided mode, select scenario based on progression
+        targetScenario = guidedScenarios[currentGuidedScenarioIndex];
+      } else {
+        // Regular mode - get first available scenario
+        targetScenario = SCENARIOS.find(s => 
+          unlockedScenarios.includes(s.id) || s.id === "flightCancellation"
+        );
+      }
+      
+      if (targetScenario) {
         // Start the selected scenario
-        startScenario(firstAvailableScenario);
+        startScenario(targetScenario);
       } else {
         toast.error("No scenarios available", {
           description: "Please try again later"
@@ -85,16 +100,105 @@ const CallSimulation = () => {
     }
   };
 
+  // Handle scenario completion in guided mode
+  const handleGuidedCompletion = () => {
+    if (isGuidedMode && currentGuidedScenarioIndex < guidedScenarios.length - 1) {
+      toast.success("Great job! Ready for the next level?", {
+        description: "You're making excellent progress. Let's try something a bit more challenging.",
+        action: {
+          label: "Continue",
+          onClick: () => {
+            setCurrentGuidedScenarioIndex(prev => prev + 1);
+            resetSimulation();
+            setTimeout(() => {
+              if (guidedScenarios[currentGuidedScenarioIndex + 1]) {
+                startScenario(guidedScenarios[currentGuidedScenarioIndex + 1]);
+              }
+            }, 500);
+          }
+        }
+      });
+    } else if (isGuidedMode) {
+      // Completed all guided scenarios
+      toast.success("Congratulations! You've completed all guided scenarios!", {
+        description: "You can now tackle any customer inquiry with confidence.",
+      });
+    }
+  };
+
+  // Extend FeedbackSection to include guided progression
+  const renderFeedbackSection = () => {
+    if (callStatus !== 'completed') return null;
+    
+    return (
+      <div>
+        <FeedbackSection
+          feedbackMessage={feedbackMessage}
+          transcript={transcript}
+          onReset={isGuidedMode ? handleGuidedCompletion : resetSimulation}
+          scenarioId={selectedScenario?.id}
+          averageScore={averageScore}
+          passThreshold={passThreshold}
+        />
+        
+        {isGuidedMode && currentGuidedScenarioIndex < guidedScenarios.length - 1 && (
+          <div className="mt-4 flex justify-end">
+            <Button 
+              className="bg-brand-blue hover:bg-brand-blue-dark"
+              onClick={() => {
+                setCurrentGuidedScenarioIndex(prev => prev + 1);
+                resetSimulation();
+                setTimeout(() => {
+                  if (guidedScenarios[currentGuidedScenarioIndex + 1]) {
+                    startScenario(guidedScenarios[currentGuidedScenarioIndex + 1]);
+                  }
+                }, 500);
+              }}
+            >
+              Continue to Next Scenario <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <section className="py-16 bg-white" id="simulation">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4 heading-gradient">
-            Try a Mock Call Simulation
+            {isGuidedMode ? "Guided Call Simulation" : "Try a Mock Call Simulation"}
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Experience our interactive call simulations powered by ElevenLabs voice technology and GPT-4o mini. Practice handling real customer scenarios.
+            {isGuidedMode 
+              ? "Follow step-by-step guidance from basic to intermediate scenarios. Perfect your skills in a structured learning path."
+              : "Experience our interactive call simulations powered by ElevenLabs voice technology and GPT-4o mini. Practice handling real customer scenarios."}
           </p>
+          
+          {/* Progress indicator for guided mode */}
+          {isGuidedMode && guidedScenarios.length > 0 && (
+            <div className="flex justify-center mt-4 mb-6">
+              <div className="flex items-center">
+                {guidedScenarios.map((scenario, index) => (
+                  <div key={index} className="flex items-center">
+                    <div className={`rounded-full w-3 h-3 ${
+                      index <= currentGuidedScenarioIndex 
+                        ? "bg-brand-blue" 
+                        : "bg-gray-300"
+                    }`}></div>
+                    {index < guidedScenarios.length - 1 && (
+                      <div className={`w-10 h-0.5 ${
+                        index < currentGuidedScenarioIndex 
+                          ? "bg-brand-blue" 
+                          : "bg-gray-300"
+                      }`}></div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           
           {/* CTA button only shown when no scenario is selected */}
           {callStatus === 'selecting' && (
@@ -110,14 +214,14 @@ const CallSimulation = () => {
                   Preparing Simulation...
                 </>
               ) : (
-                "Start a Simulation"
+                isGuidedMode ? "Start Guided Learning" : "Start a Simulation"
               )}
             </Button>
           )}
         </div>
 
         <div className="max-w-4xl mx-auto">
-          {callStatus === 'selecting' && !isInitializing && (
+          {callStatus === 'selecting' && !isInitializing && !isGuidedMode && (
             <ScenarioSelection 
               scenarios={SCENARIOS}
               onSelectScenario={startScenario}
@@ -165,16 +269,7 @@ const CallSimulation = () => {
                   />
                 )}
 
-                {callStatus === 'completed' && (
-                  <FeedbackSection
-                    feedbackMessage={feedbackMessage}
-                    transcript={transcript}
-                    onReset={resetSimulation}
-                    scenarioId={selectedScenario.id}
-                    averageScore={averageScore}
-                    passThreshold={passThreshold}
-                  />
-                )}
+                {callStatus === 'completed' && renderFeedbackSection()}
               </CardContent>
 
               {callStatus === 'in-progress' && (

@@ -22,7 +22,7 @@ const Index = () => {
         </div>
       )}
       
-      <CallSimulation />
+      <CallSimulation isGuidedMode={false} />
       <Footer />
     </div>
   );
