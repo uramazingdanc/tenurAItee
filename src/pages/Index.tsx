@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import Hero from "@/components/Hero";
 import Features from "@/components/Features";
 import Footer from "@/components/Footer";
@@ -9,6 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   const { user } = useAuth();
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -24,7 +26,7 @@ const Index = () => {
       
       <CallSimulation />
       <Footer />
-      <AIChatWidget />
+      <AIChatWidget isOpen={isChatOpen} setIsOpen={setIsChatOpen} />
     </div>
   );
 };
