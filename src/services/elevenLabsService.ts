@@ -35,6 +35,8 @@ export const textToSpeech = async ({
   speakerBoost = true,
 }: TextToSpeechOptions): Promise<string> => {
   try {
+    console.log('Calling text-to-speech function with:', { voiceId, model });
+    
     // Call the Supabase Edge Function that handles ElevenLabs API
     const { data, error } = await supabase.functions.invoke('text-to-speech', {
       body: {
@@ -54,6 +56,12 @@ export const textToSpeech = async ({
       throw new Error(`Failed to convert text to speech: ${error.message}`);
     }
 
+    if (!data || !data.audio_url) {
+      console.error('Invalid response from text-to-speech function:', data);
+      throw new Error('Failed to get audio URL from ElevenLabs API');
+    }
+
+    console.log('Successfully generated audio');
     return data.audio_url;
   } catch (error) {
     console.error('Error in textToSpeech:', error);

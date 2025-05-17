@@ -12,7 +12,17 @@ interface RequestBody {
   };
 }
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
 serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
   try {
     // Get API key from environment variable
     const apiKey = Deno.env.get('ELEVENLABS_API_KEY');
@@ -20,7 +30,7 @@ serve(async (req) => {
     if (!apiKey) {
       return new Response(
         JSON.stringify({ error: 'ElevenLabs API key is not configured' }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -30,12 +40,14 @@ serve(async (req) => {
     if (!text || !voice_id) {
       return new Response(
         JSON.stringify({ error: 'Text and voice_id are required' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    console.log('Starting ElevenLabs API request with:', { voice_id, model_id });
+
     // Prepare request data for ElevenLabs API
-    const elevenlabsUrl = `https://api.elevenlabs.io/v1/text-to-speech/${voice_id}/stream`;
+    const elevenlabsUrl = `https://api.elevenlabs.io/v1/text-to-speech/${voice_id}`;
     
     const response = await fetch(elevenlabsUrl, {
       method: 'POST',
@@ -55,7 +67,7 @@ serve(async (req) => {
       console.error('ElevenLabs API error:', errorData);
       return new Response(
         JSON.stringify({ error: `ElevenLabs API error: ${response.status}` }),
-        { status: response.status, headers: { 'Content-Type': 'application/json' } }
+        { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -63,19 +75,18 @@ serve(async (req) => {
     const audioData = await response.arrayBuffer();
     
     // Create a temporary audio URL
-    // In a production environment, you might want to store this in Supabase Storage
     const audio = Buffer.from(audioData).toString('base64');
     const audioUrl = `data:audio/mpeg;base64,${audio}`;
 
     return new Response(
       JSON.stringify({ audio_url: audioUrl }),
-      { headers: { 'Content-Type': 'application/json' } }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
     console.error('Error in text-to-speech function:', error);
     return new Response(
       JSON.stringify({ error: error.message || 'Unknown error occurred' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
