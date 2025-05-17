@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CallScenario } from "@/services/callScenarioService";
 import { useQuery } from "@tanstack/react-query";
-import { fetchScenarios } from "@/services/scenarioService";
+import { fetchScenarios, getScenarioDuration } from "@/services/scenarioService";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface ScenarioSelectionProps {
@@ -29,7 +29,7 @@ const ScenarioSelection = ({ scenarios, onSelectScenario }: ScenarioSelectionPro
       message: "Hello, I need assistance with my request.",
       emotion: "neutral"
     }],
-    duration: s.duration || scenarios.find(hs => hs.title === s.title)?.duration || 5,
+    duration: getScenarioDuration(s.title),
   })) : scenarios;
 
   if (isLoading) {

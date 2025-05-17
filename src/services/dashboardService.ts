@@ -12,11 +12,11 @@ export interface TrainingFeature {
   is_premium?: boolean;
 }
 
-export interface UserPerformance {
+export interface AgentPerformance {
   response_accuracy: number;
   issue_resolution_rate: number;
   customer_satisfaction: number;
-  improvement_areas: string[];
+  improvement_areas: { title: string; value: number }[];
   period_start: string;
   period_end: string;
 }
@@ -31,11 +31,48 @@ export interface UserProgress {
 export interface DashboardData {
   profile: any;
   progress: UserProgress;
-  performance: UserPerformance;
+  performance: AgentPerformance;
   completedScenarios: any[];
-  achievements: any[];
-  recommendations: any[];
+  achievements: Achievement[];
+  recommendations: Recommendation[];
   learningPath: any[];
+}
+
+// Type definitions for components
+export interface AgentProgressData {
+  level: number;
+  currentXp: number;
+  requiredXp: number;
+  streak: number;
+  nextReward: string;
+}
+
+export interface Recommendation {
+  id: string;
+  title: string;
+  description?: string;
+  type: 'video' | 'article' | 'practice';
+  duration: string;
+  url?: string;
+}
+
+export interface Achievement {
+  id?: string;
+  name: string;
+  description: string;
+  icon: string;
+  unlocked: boolean;
+  index?: number;
+}
+
+export interface Scenario {
+  id: string;
+  title: string;
+  description: string;
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+  completion?: number;
+  status?: 'completed' | 'in-progress' | 'locked';
+  category?: string;
 }
 
 // Fetch dashboard data from Supabase Edge Function
@@ -138,10 +175,16 @@ export const updateAgentProgress = async (
   progressUpdate: Partial<UserProgress>
 ): Promise<void> => {
   try {
+    const user = await supabase.auth.getUser();
+    
+    if (!user.data?.user) {
+      throw new Error('No authenticated user found');
+    }
+    
     const { error } = await supabase
       .from('agent_progress')
       .update(progressUpdate)
-      .eq('user_id', supabase.auth.getUser());
+      .eq('user_id', user.data.user.id);
 
     if (error) {
       console.error('Error updating agent progress:', error);
