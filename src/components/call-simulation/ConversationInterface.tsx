@@ -2,8 +2,9 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, Play, Pause } from "lucide-react";
+import { Loader2, Play, Pause, VolumeX } from "lucide-react";
 import { CallStep } from "@/services/callScenarioService";
+import { toast } from "@/components/ui/use-toast";
 
 interface ConversationInterfaceProps {
   currentCustomerMessage: CallStep | null;
@@ -24,6 +25,18 @@ const ConversationInterface = ({
   onSelectResponse,
   audioRef 
 }: ConversationInterfaceProps) => {
+  const [audioError, setAudioError] = useState<boolean>(false);
+  
+  // Handle audio errors
+  const handleAudioError = () => {
+    setAudioError(true);
+    toast({
+      title: "Audio Error",
+      description: "Could not play the audio. Please try again.",
+      variant: "destructive",
+    });
+  };
+
   return (
     <>
       <div className="flex items-center mb-4">
@@ -47,7 +60,7 @@ const ConversationInterface = ({
           <Button 
             variant="outline" 
             size="sm" 
-            className={`flex items-center ${isPlaying ? 'border-red-500 text-red-500' : ''}`}
+            className={`flex items-center ${isPlaying ? 'border-red-500 text-red-500' : ''} ${audioError ? 'border-red-500 text-red-500' : ''}`}
             onClick={onPlayPause}
             disabled={isLoading}
           >
@@ -60,6 +73,11 @@ const ConversationInterface = ({
               <>
                 <Pause className="h-4 w-4 mr-1" />
                 Pause Audio
+              </>
+            ) : audioError ? (
+              <>
+                <VolumeX className="h-4 w-4 mr-1" />
+                Audio Unavailable
               </>
             ) : (
               <>
@@ -77,8 +95,13 @@ const ConversationInterface = ({
         </p>
       </div>
       
-      {/* Hidden audio element */}
-      <audio ref={audioRef} style={{ display: 'none' }} />
+      {/* Hidden audio element with error handler */}
+      <audio 
+        ref={audioRef} 
+        style={{ display: 'none' }} 
+        onError={handleAudioError}
+        onPlay={() => setAudioError(false)}
+      />
 
       <Separator className="my-6" />
 

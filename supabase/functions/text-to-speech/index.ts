@@ -52,6 +52,7 @@ serve(async (req) => {
     const response = await fetch(elevenlabsUrl, {
       method: 'POST',
       headers: {
+        'Accept': 'audio/mpeg',
         'Content-Type': 'application/json',
         'xi-api-key': apiKey,
       },
@@ -75,9 +76,8 @@ serve(async (req) => {
     const audioData = await response.arrayBuffer();
     
     // Create a base64 string from the audio data
-    const base64Audio = btoa(
-      String.fromCharCode(...new Uint8Array(audioData))
-    );
+    // Fix: Process the array buffer correctly to avoid Maximum call stack size exceeded
+    const base64Audio = arrayBufferToBase64(audioData);
     const audioUrl = `data:audio/mpeg;base64,${base64Audio}`;
 
     return new Response(
@@ -92,3 +92,18 @@ serve(async (req) => {
     );
   }
 });
+
+// Helper function to convert ArrayBuffer to base64 without stack overflow
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  const chunkSize = 1024; // Process in smaller chunks to avoid call stack issues
+  
+  for (let i = 0; i < bytes.byteLength; i += chunkSize) {
+    const chunk = bytes.slice(i, Math.min(i + chunkSize, bytes.byteLength));
+    const chunkString = String.fromCharCode.apply(null, [...chunk]);
+    binary += chunkString;
+  }
+  
+  return btoa(binary);
+}

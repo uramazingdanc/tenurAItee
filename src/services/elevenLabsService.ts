@@ -3,6 +3,7 @@
 // API Documentation: https://docs.elevenlabs.io/api-reference
 
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/components/ui/use-toast';
 
 // Voice IDs from ElevenLabs
 const VOICES = {
@@ -53,11 +54,21 @@ export const textToSpeech = async ({
 
     if (error) {
       console.error('Error calling text-to-speech function:', error);
+      toast({
+        title: 'Audio Generation Failed',
+        description: 'ElevenLabs API error: ' + (error.message || 'Unknown error'),
+        variant: 'destructive',
+      });
       throw new Error(`Failed to convert text to speech: ${error.message}`);
     }
 
     if (!data || !data.audio_url) {
       console.error('Invalid response from text-to-speech function:', data);
+      toast({
+        title: 'Audio Generation Failed',
+        description: data?.error || 'Failed to get audio URL from ElevenLabs API',
+        variant: 'destructive',
+      });
       throw new Error('Failed to get audio URL from ElevenLabs API');
     }
 
