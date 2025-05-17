@@ -6,37 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-
-type KnowledgeItem = {
-  id: string;
-  title: string;
-  content: string;
-  category: string;
-  is_premium: boolean | null;
-  tags?: string[];
-  excerpt?: string;
-};
-
-// Function to fetch knowledge items from Supabase
-const fetchKnowledgeItems = async (): Promise<KnowledgeItem[]> => {
-  const { data, error } = await supabase
-    .from('knowledge_items')
-    .select('*');
-  
-  if (error) {
-    console.error("Error fetching knowledge items:", error);
-    throw error;
-  }
-  
-  // Process the data to add excerpt and tags
-  return data.map(item => ({
-    ...item,
-    excerpt: generateExcerpt(item.content),
-    tags: generateTags(item.category, item.is_premium)
-  }));
-};
+import { fetchKnowledgeItems, KnowledgeItem } from "@/services/knowledgeService";
 
 // Helper to generate excerpt from content
 const generateExcerpt = (content: string): string => {
@@ -90,100 +61,91 @@ const KnowledgeBase = () => {
   // Fallback knowledge categories
   const fallbackKnowledgeCategories = [
     {
-      id: "basics",
-      name: "Customer Service Basics",
+      id: "cancellations",
+      name: "Cancellations",
       articles: [
         {
-          id: 1,
-          title: "Active Listening Techniques",
-          excerpt: "Learn how to effectively listen to customers to understand their needs and concerns.",
-          tags: ["Communication", "Beginner"]
+          id: "1",
+          title: "Flight Cancellation Policy",
+          excerpt: "Learn how to handle flight cancellation requests and explain policies to customers.",
+          tags: ["Cancellations", "Beginner"]
         },
         {
-          id: 2,
-          title: "De-escalation Strategies",
-          excerpt: "Techniques to calm upset customers and resolve conflicts professionally.",
-          tags: ["Conflict Resolution", "Intermediate"]
-        },
-        {
-          id: 3,
-          title: "Building Customer Rapport",
-          excerpt: "How to establish trust and positive relationships with customers.",
-          tags: ["Communication", "Beginner"]
+          id: "2",
+          title: "Hotel Cancellation Guidelines",
+          excerpt: "Understanding hotel booking cancellations and refund policies.",
+          tags: ["Cancellations", "Beginner"]
         }
       ]
     },
     {
-      id: "travel",
-      name: "Travel Industry Knowledge",
+      id: "refunds",
+      name: "Refunds",
       articles: [
         {
-          id: 4,
-          title: "Flight Cancellation Policies",
-          excerpt: "Understanding airline policies for cancellations and refunds.",
-          tags: ["Policies", "Intermediate"]
+          id: "3",
+          title: "Refund Processing Steps",
+          excerpt: "Step-by-step guide to processing customer refunds correctly.",
+          tags: ["Refunds", "Intermediate"]
         },
         {
-          id: 5,
-          title: "Booking Modification Procedures",
-          excerpt: "Step-by-step guide for handling customer booking changes.",
-          tags: ["Procedures", "Intermediate"]
-        },
-        {
-          id: 6,
-          title: "Travel Insurance Coverage",
-          excerpt: "Overview of travel insurance options and what they cover.",
-          tags: ["Insurance", "Advanced"]
+          id: "4",
+          title: "Partial Refund Scenarios",
+          excerpt: "When and how to issue partial refunds to customers.",
+          tags: ["Refunds", "Intermediate"]
         }
       ]
     },
     {
-      id: "advanced",
-      name: "Advanced Techniques",
+      id: "conflict-resolution",
+      name: "Conflict Resolution",
       articles: [
         {
-          id: 7,
-          title: "Handling Multiple Customer Concerns",
-          excerpt: "How to address multiple issues during a single customer interaction.",
-          tags: ["Problem Solving", "Advanced"]
+          id: "5",
+          title: "De-escalation Techniques",
+          excerpt: "Advanced techniques for calming upset customers and resolving conflicts.",
+          tags: ["Conflict Resolution", "Advanced", "Premium"]
         },
         {
-          id: 8,
-          title: "Personalization Strategies",
-          excerpt: "Techniques for tailoring customer interactions for better experiences.",
-          tags: ["Customer Experience", "Advanced"]
-        },
-        {
-          id: 9,
-          title: "Cultural Sensitivity in Customer Service",
-          excerpt: "Understanding and respecting cultural differences in customer interactions.",
-          tags: ["Communication", "Intermediate"]
+          id: "6",
+          title: "Handling Complaints",
+          excerpt: "Best practices for addressing and resolving customer complaints.",
+          tags: ["Conflict Resolution", "Advanced"]
         }
       ]
     }
   ];
 
-  let categorizedContent;
+  let categorizedContent: Record<string, KnowledgeItem[]> = {};
   let categories: {id: string, name: string}[] = [];
 
-  // If we have data from Supabase, process it
+  // Process data from Supabase if available
   if (knowledgeItems && knowledgeItems.length > 0) {
-    const groupedItems = groupByCategory(knowledgeItems);
-    categories = Object.keys(groupedItems).map(category => ({
+    // Process the items to add excerpts and tags
+    const processedItems = knowledgeItems.map(item => ({
+      ...item,
+      excerpt: generateExcerpt(item.content),
+      tags: generateTags(item.category, item.is_premium)
+    }));
+    
+    // Group items by category
+    categorizedContent = groupByCategory(processedItems);
+    
+    // Generate categories list
+    categories = Object.keys(categorizedContent).map(category => ({
       id: category.toLowerCase().replace(/\s+/g, '-'),
       name: category
     }));
-    categorizedContent = groupedItems;
   } else {
     // Use fallback data
-    categorizedContent = fallbackKnowledgeCategories.reduce((acc: Record<string, KnowledgeItem[]>, category) => {
+    categorizedContent = fallbackKnowledgeCategories.reduce((acc: Record<string, any[]>, category) => {
       acc[category.id] = category.articles.map(article => ({
-        id: article.id.toString(),
+        id: article.id,
         title: article.title,
         content: article.excerpt,
         excerpt: article.excerpt,
-        category: category.id,
-        is_premium: category.id === 'advanced', // Example logic
+        category: category.name,
+        is_premium: article.tags.includes('Premium'),
         tags: article.tags
       }));
       return acc;
@@ -225,43 +187,49 @@ const KnowledgeBase = () => {
           </div>
         </div>
 
-        <Tabs defaultValue={categories.length > 0 ? categories[0].id : "basics"} className="max-w-4xl mx-auto">
-          <TabsList className="grid grid-cols-3 mb-8">
-            {categories.map((category) => (
-              <TabsTrigger key={category.id} value={category.id}>
-                {category.name}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-          
-          {categories.map((category) => (
-            <TabsContent key={category.id} value={category.id} className="space-y-6">
-              {categorizedContent[category.id]?.map((article) => (
-                <Card key={article.id} className="card-hover overflow-hidden">
-                  <CardHeader className="pb-3">
-                    <CardTitle>{article.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <CardDescription className="text-base">{article.excerpt}</CardDescription>
-                  </CardContent>
-                  <Separator />
-                  <CardFooter className="pt-3 flex justify-between">
-                    <div className="flex space-x-2">
-                      {article.tags?.map((tag, index) => (
-                        <Badge key={index} variant="outline" className="bg-gray-100">
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-                    <Button variant="ghost" size="sm" className="text-brand-blue hover:text-brand-blue-dark hover:bg-brand-blue/10">
-                      Read More
-                    </Button>
-                  </CardFooter>
-                </Card>
+        {isLoading ? (
+          <div className="flex justify-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-blue"></div>
+          </div>
+        ) : (
+          <Tabs defaultValue={categories.length > 0 ? categories[0].id : "cancellations"} className="max-w-4xl mx-auto">
+            <TabsList className="grid grid-cols-3 mb-8">
+              {categories.map((category) => (
+                <TabsTrigger key={category.id} value={category.id}>
+                  {category.name}
+                </TabsTrigger>
               ))}
-            </TabsContent>
-          ))}
-        </Tabs>
+            </TabsList>
+            
+            {categories.map((category) => (
+              <TabsContent key={category.id} value={category.id} className="space-y-6">
+                {categorizedContent[category.id]?.map((article: any) => (
+                  <Card key={article.id} className="card-hover overflow-hidden">
+                    <CardHeader className="pb-3">
+                      <CardTitle>{article.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <CardDescription className="text-base">{article.excerpt}</CardDescription>
+                    </CardContent>
+                    <Separator />
+                    <CardFooter className="pt-3 flex justify-between">
+                      <div className="flex space-x-2">
+                        {article.tags?.map((tag: string, index: number) => (
+                          <Badge key={index} variant="outline" className="bg-gray-100">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                      <Button variant="ghost" size="sm" className="text-brand-blue hover:text-brand-blue-dark hover:bg-brand-blue/10">
+                        Read More
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                ))}
+              </TabsContent>
+            ))}
+          </Tabs>
+        )}
       </div>
     </section>
   );

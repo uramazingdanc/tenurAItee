@@ -1,40 +1,9 @@
 
-import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-
-// Type definition for videos from Supabase
-type Video = {
-  id: string;
-  title: string;
-  description: string;
-  video_url: string;
-  thumbnail_url: string | null;
-  duration?: string; // This is not in the DB schema but used in the UI
-  category: string;
-  is_premium: boolean | null;
-};
-
-// Fetch videos from Supabase
-const fetchVideos = async (): Promise<Video[]> => {
-  const { data, error } = await supabase
-    .from('videos')
-    .select('*');
-  
-  if (error) {
-    console.error("Error fetching videos:", error);
-    throw error;
-  }
-  
-  // Map the data to include a duration field
-  return data.map(video => ({
-    ...video,
-    duration: calculateDuration(video), // Helper function to calculate video duration
-    thumbnail_url: video.thumbnail_url || getDefaultThumbnail(video.category)
-  }));
-};
+import { fetchVideos } from "@/services/videoService";
+import type { Video } from "@/services/videoService";
 
 // Helper function to calculate video duration (mocked for now)
 const calculateDuration = (video: Video): string => {
@@ -102,8 +71,15 @@ const VideoHub = () => {
     console.error("Failed to load videos:", error);
   }
 
+  // Process videos data to include durations and ensure thumbnails
+  const processedVideos = videos?.map(video => ({
+    ...video,
+    duration: calculateDuration(video),
+    thumbnail_url: video.thumbnail_url || getDefaultThumbnail(video.category)
+  }));
+
   // Videos to display - either from Supabase or fallbacks
-  const displayVideos = videos || fallbackVideos;
+  const displayVideos = processedVideos || fallbackVideos;
 
   return (
     <section className="py-16 bg-white" id="videos">
@@ -117,35 +93,41 @@ const VideoHub = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {displayVideos.map((video) => (
-            <div key={video.id} className="group">
-              <Card className="overflow-hidden card-hover">
-                <div className="relative">
-                  <img 
-                    src={video.thumbnail_url || video.thumbnail} 
-                    alt={video.title} 
-                    className="w-full h-48 object-cover transition-transform group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button className="bg-white/20 hover:bg-white/40 backdrop-blur-sm rounded-full w-12 h-12 flex items-center justify-center">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M5 3L19 12L5 21V3Z" fill="white" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </Button>
+        {isLoading ? (
+          <div className="flex justify-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-blue"></div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {displayVideos.map((video) => (
+              <div key={video.id} className="group">
+                <Card className="overflow-hidden card-hover">
+                  <div className="relative">
+                    <img 
+                      src={video.thumbnail_url || video.thumbnail} 
+                      alt={video.title} 
+                      className="w-full h-48 object-cover transition-transform group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button className="bg-white/20 hover:bg-white/40 backdrop-blur-sm rounded-full w-12 h-12 flex items-center justify-center">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M5 3L19 12L5 21V3Z" fill="white" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </Button>
+                    </div>
+                    <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
+                      {video.duration}
+                    </div>
                   </div>
-                  <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
-                    {video.duration}
-                  </div>
-                </div>
-                <CardContent className="pt-4">
-                  <h3 className="font-medium text-lg mb-2">{video.title}</h3>
-                  <p className="text-gray-500 text-sm">{video.description}</p>
-                </CardContent>
-              </Card>
-            </div>
-          ))}
-        </div>
+                  <CardContent className="pt-4">
+                    <h3 className="font-medium text-lg mb-2">{video.title}</h3>
+                    <p className="text-gray-500 text-sm">{video.description}</p>
+                  </CardContent>
+                </Card>
+              </div>
+            ))}
+          </div>
+        )}
 
         <div className="text-center mt-10">
           <Button variant="outline" className="border-brand-blue text-brand-blue hover:bg-brand-blue/10">
