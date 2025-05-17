@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import ProgressSection from "./ProgressSection";
@@ -96,13 +95,13 @@ const DashboardContent = ({ dashboardData, userStats }: DashboardContentProps) =
         <TabsContent value="progress">
           <ProgressSection 
             xpProgress={dashboardData.progress} 
-            completedItems={dashboardData.completedScenarios} 
           />
         </TabsContent>
         
         <TabsContent value="scenarios">
           <ScenariosList 
-            items={dashboardData.recommendations || []}
+            completedScenarios={dashboardData.completedScenarios || []}
+            inProgressScenarios={[]}
           />
           <RecommendationsList 
             recommendations={dashboardData.recommendations || []}

@@ -37,23 +37,48 @@ export const fetchKnowledgeItems = async (includePremium: boolean = false): Prom
   return data || [];
 };
 
-// Added this new function
+// We'll use hardcoded categories since the table doesn't exist yet
 export const fetchKnowledgeCategories = async (): Promise<KnowledgeCategory[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('knowledge_categories')
-      .select('*');
-      
-    if (error) {
-      console.error("Error fetching knowledge categories:", error);
-      return [];
+  // Instead of querying a non-existent table, we'll return our predefined categories
+  const categories: KnowledgeCategory[] = [
+    {
+      id: 'handling_calls',
+      name: 'Handling Calls',
+      description: 'De-escalation scripts, tone guidelines, call flowcharts',
+      icon: 'Phone',
+      quizExample: 'Which phrase best demonstrates active listening?'
+    },
+    {
+      id: 'process_bookings',
+      name: 'Process Bookings',
+      description: 'Step-by-step booking workflow, common errors, verification protocols',
+      icon: 'FileText',
+      quizExample: 'Identify the 3 mandatory fields for new bookings'
+    },
+    {
+      id: 'modify_bookings',
+      name: 'Modify Bookings',
+      description: 'Policy exceptions, fee structures, system navigation screenshots',
+      icon: 'FileText',
+      quizExample: 'Calculate change fees for a date modification 48hrs pre-departure'
+    },
+    {
+      id: 'cancel_bookings',
+      name: 'Cancel Bookings',
+      description: 'Refund eligibility tables, cancellation scripts, retention strategies',
+      icon: 'Ban',
+      quizExample: 'Which cancellation reason qualifies for full refund under DOT regulations?'
+    },
+    {
+      id: 'refund_requests',
+      name: 'Refund Requests',
+      description: 'Dispute resolution paths, documentation requirements, approval workflow',
+      icon: 'CreditCard',
+      quizExample: 'Match each refund type to its processing timeline'
     }
-    
-    return data || [];
-  } catch (error) {
-    console.error("Error fetching knowledge categories:", error);
-    return [];
-  }
+  ];
+  
+  return categories;
 };
 
 export const fetchKnowledgeItemsByCategory = async (category: string, includePremium: boolean = false): Promise<KnowledgeItem[]> => {

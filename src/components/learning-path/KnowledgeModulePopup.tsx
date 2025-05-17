@@ -9,7 +9,7 @@ import { Book, Check, ChevronLeft, ChevronRight, ClipboardCheck } from 'lucide-r
 import { KnowledgeModule, trackModuleView, updateModuleStatus, submitQuizAnswers } from '@/services/learningPathService';
 import ReactMarkdown from 'react-markdown';
 
-interface KnowledgeModulePopupProps {
+export interface KnowledgeModulePopupProps {
   module: KnowledgeModule;
   onClose: () => void;
   userId: string;
