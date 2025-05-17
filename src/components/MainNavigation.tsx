@@ -106,6 +106,11 @@ const MainNavigation = () => {
                 Videos
               </Link>
             </NavigationMenuItem>
+            <NavigationMenuItem>
+              <Link to="/learning-path" className={navigationMenuTriggerStyle()}>
+                Learning Path
+              </Link>
+            </NavigationMenuItem>
           </>
         )}
       </NavigationMenuList>

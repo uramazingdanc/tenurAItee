@@ -1,8 +1,14 @@
 
-import FeatureCardsGrid from "@/components/dashboard/FeatureCardsGrid";
-import DashboardTabs from "./DashboardTabs";
-import DashboardSidebar from "./DashboardSidebar";
-import CallSimulation from "@/components/CallSimulation";
+import React from "react";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import ProgressSection from "./ProgressSection";
+import UserProgressCard from "./UserProgressCard";
+import RecommendationsList from "./RecommendationsList";
+import ScenariosList from "./ScenariosList";
+import PerformanceStats from "./PerformanceStats";
+import AchievementsList from "./AchievementsList";
+import LearningPathList from "./LearningPathList";
+import TrainingFeaturesGrid from "./TrainingFeaturesGrid";
 
 interface DashboardContentProps {
   dashboardData: any;
@@ -16,58 +22,113 @@ interface DashboardContentProps {
 const DashboardContent = ({ dashboardData, userStats }: DashboardContentProps) => {
   return (
     <>
-      {/* Feature Cards */}
-      <FeatureCardsGrid />
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          {/* Progress Section */}
-          <DashboardMainContent 
-            dashboardData={dashboardData}
-            userStats={userStats}
+      <div className="mb-8">
+        {/* User stats cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <UserProgressCard 
+            title="Completed Scenarios"
+            value={userStats.scenariosCompleted}
+            icon="📋"
           />
-          
-          {/* Call Simulation */}
-          <CallSimulation />
+          <UserProgressCard 
+            title="Badges Earned"
+            value={userStats.badgesEarned}
+            icon="🏆"
+          />
+          <UserProgressCard 
+            title="Average Rating"
+            value={userStats.avgRating}
+            icon="⭐"
+            suffix="/5"
+          />
+        </div>
+
+        {/* Training Features */}
+        <TrainingFeaturesGrid />
+      </div>
+
+      <Tabs defaultValue="progress" className="mb-8">
+        <div className="border-b mb-4">
+          <div className="flex overflow-x-auto space-x-8">
+            <div className="border-b-2 border-brand-blue px-1">
+              <button 
+                className="px-2 py-2 text-sm font-medium text-brand-blue"
+                id="progress-tab"
+              >
+                Your Progress
+              </button>
+            </div>
+            <div className="border-b-2 border-transparent px-1">
+              <button 
+                className="px-2 py-2 text-sm font-medium text-gray-500 hover:text-gray-700"
+                id="scenarios-tab"
+              >
+                Recommended Scenarios
+              </button>
+            </div>
+            <div className="border-b-2 border-transparent px-1">
+              <button 
+                className="px-2 py-2 text-sm font-medium text-gray-500 hover:text-gray-700"
+                id="performance-tab"
+              >
+                Performance Stats
+              </button>
+            </div>
+            <div className="border-b-2 border-transparent px-1">
+              <button 
+                className="px-2 py-2 text-sm font-medium text-gray-500 hover:text-gray-700"
+                id="achievements-tab"
+              >
+                Achievements
+              </button>
+            </div>
+            <div className="border-b-2 border-transparent px-1">
+              <button 
+                className="px-2 py-2 text-sm font-medium text-gray-500 hover:text-gray-700"
+                id="learning-path-tab"
+              >
+                Learning Path
+              </button>
+            </div>
+          </div>
         </div>
         
-        <div className="space-y-6">
-          <DashboardSidebar 
-            progressData={{
-              level: dashboardData.progress.current_level,
-              currentXp: dashboardData.progress.xp_points,
-              requiredXp: (dashboardData.progress.current_level + 1) * 100,
-              streak: dashboardData.progress.current_streak,
-              nextReward: "Premium Badge"
-            }}
-            recommendations={dashboardData.recommendations}
-            performance={dashboardData.performance}
+        <TabsContent value="progress">
+          <ProgressSection 
+            progress={dashboardData.progress} 
+            completedScenarios={dashboardData.completedScenarios} 
           />
-        </div>
-      </div>
+        </TabsContent>
+        
+        <TabsContent value="scenarios">
+          <ScenariosList 
+            scenarios={dashboardData.recommendations || []}
+          />
+          <RecommendationsList 
+            recommendations={dashboardData.recommendations || []}
+          />
+        </TabsContent>
+        
+        <TabsContent value="performance">
+          <PerformanceStats 
+            performance={dashboardData.performance || {}}
+          />
+        </TabsContent>
+        
+        <TabsContent value="achievements">
+          <AchievementsList 
+            achievements={dashboardData.achievements || []}
+          />
+        </TabsContent>
+        
+        <TabsContent value="learning-path">
+          <LearningPathList 
+            learningPath={dashboardData.learningPath || []}
+          />
+        </TabsContent>
+      </Tabs>
     </>
   );
 };
-
-const DashboardMainContent = ({ dashboardData, userStats }) => {
-  return (
-    <>
-      {/* Progress Section */}
-      <ProgressSection 
-        level={dashboardData.progress.current_level}
-        xpProgress={Math.floor((dashboardData.progress.xp_points / ((dashboardData.progress.current_level + 1) * 100)) * 100)}
-        scenariosCompleted={userStats.scenariosCompleted}
-        badgesEarned={userStats.badgesEarned}
-        avgRating={userStats.avgRating}
-        skillName="Advanced Problem Solving"
-      />
-
-      {/* Tabs Section */}
-      <DashboardTabs dashboardData={dashboardData} />
-    </>
-  );
-};
-
-import ProgressSection from "@/components/dashboard/ProgressSection";
 
 export default DashboardContent;
