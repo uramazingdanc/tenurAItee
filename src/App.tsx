@@ -34,7 +34,9 @@ const AppLayout = () => {
     location.pathname === '/videos' ||
     location.pathname === '/knowledge' ||
     location.pathname === '/profile' ||
-    location.pathname.startsWith('/scenarios/');
+    location.pathname === '/scenarios' ||
+    location.pathname.startsWith('/scenarios/') ||
+    location.pathname === '/chat-simulation';
 
   return (
     <>
@@ -54,7 +56,9 @@ const AppLayout = () => {
           <Route path="/videos" element={<Dashboard />} />
           <Route path="/knowledge" element={<Dashboard />} />
           <Route path="/profile" element={<Dashboard />} />
+          <Route path="/scenarios" element={<Dashboard />} />
           <Route path="/scenarios/:id" element={<Dashboard />} />
+          <Route path="/chat-simulation" element={<Dashboard />} />
         </Route>
         
         {/* Catch-all route */}

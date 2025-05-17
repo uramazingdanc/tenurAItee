@@ -29,7 +29,7 @@ const FeatureCardsGrid = () => {
       icon: Phone,
       title: "Mock Call Scenarios",
       description: "Practice handling customer inquiries through interactive simulations with ElevenLabs voice synthesis technology.",
-      linkTo: "/dashboard#simulation",
+      linkTo: "/scenarios",
       iconColor: "text-green-600",
       iconBgColor: "bg-green-100"
     },
@@ -43,9 +43,9 @@ const FeatureCardsGrid = () => {
     },
     {
       icon: MessageSquare,
-      title: "Tenured AI Assistant",
-      description: "Experience guided simulations with our AI assistant that provides real-time feedback and suggestions.",
-      linkTo: "/dashboard#chat",
+      title: "Guided Simulations",
+      description: "Experience step-by-step guided simulations with our AI assistant that provides real-time feedback and suggestions.",
+      linkTo: "/chat-simulation",
       iconColor: "text-orange-600",
       iconBgColor: "bg-orange-100"
     }
