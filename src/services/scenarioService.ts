@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export type Scenario = {
@@ -99,4 +98,29 @@ export const fetchPremiumScenarios = async (): Promise<Scenario[]> => {
   }
   
   return data || [];
+};
+
+// Helper function to get estimated duration based on scenario type
+export const getScenarioDuration = (title: string): number => {
+  if (title.includes("Cancellation")) {
+    return 5;
+  } else if (title.includes("Modification") || title.includes("Refund")) {
+    return 10;
+  } else {
+    return 8; // Default duration
+  }
+};
+
+// Helper function to get scenario icon based on category
+export const getScenarioIcon = (category: string): string => {
+  const icons: Record<string, string> = {
+    "Cancellations": "Square",
+    "Modifications": "Square",
+    "Refunds": "Square",
+    "Complaints": "MessageSquare",
+    "Technical": "Settings",
+    "General": "HelpCircle"
+  };
+  
+  return icons[category] || "Square";
 };
