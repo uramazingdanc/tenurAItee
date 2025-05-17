@@ -3,14 +3,12 @@ import { useState } from "react";
 import Hero from "@/components/Hero";
 import Features from "@/components/Features";
 import Footer from "@/components/Footer";
-import AIChatWidget from "@/components/AIChatWidget";
 import CallSimulation from "@/components/CallSimulation";
 import RecommendedScenarios from "@/components/RecommendedScenarios";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   const { user } = useAuth();
-  const [isChatOpen, setIsChatOpen] = useState(false);
 
   return (
     <div className="flex flex-col min-h-screen pt-20">
@@ -26,7 +24,6 @@ const Index = () => {
       
       <CallSimulation />
       <Footer />
-      <AIChatWidget isOpen={isChatOpen} setIsOpen={setIsChatOpen} />
     </div>
   );
 };

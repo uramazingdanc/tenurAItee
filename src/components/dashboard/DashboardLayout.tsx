@@ -75,7 +75,7 @@ const DashboardLayout = () => {
         />
       </motion.div>
       
-      {/* AI Chat Widget */}
+      {/* AI Chat Widget - only visible in dashboard */}
       <AIChatWidget isOpen={isAIChatOpen} setIsOpen={setIsAIChatOpen} />
     </div>
   );
