@@ -14,7 +14,11 @@ const DashboardSidebar = ({ progressData, recommendations, performance }: Dashbo
   return (
     <>
       {/* User Progress Card */}
-      <UserProgressCard xpProgress={progressData} />
+      <UserProgressCard 
+        label="XP Progress" 
+        value={progressData.xp_points || 0}
+        icon="✨"
+      />
       
       {/* Recommendations */}
       <RecommendationsList recommendations={recommendations.map(r => ({
