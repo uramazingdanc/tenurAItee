@@ -9,6 +9,7 @@ export type Video = {
   thumbnail_url: string | null;
   category: string;
   is_premium: boolean | null;
+  tags?: string[];
 };
 
 export const fetchVideos = async (includePremium: boolean = false): Promise<Video[]> => {
@@ -59,4 +60,38 @@ export const fetchPremiumVideos = async (): Promise<Video[]> => {
   }
   
   return data || [];
+};
+
+export const fetchVideosByCategory = async (category: string, includePremium: boolean = false): Promise<Video[]> => {
+  const query = supabase
+    .from('videos')
+    .select('*')
+    .eq('category', category);
+    
+  if (!includePremium) {
+    query.eq('is_premium', false);
+  }
+  
+  const { data, error } = await query;
+  
+  if (error) {
+    console.error(`Error fetching videos for category ${category}:`, error);
+    throw error;
+  }
+  
+  return data || [];
+};
+
+export const fetchVideoTags = async (): Promise<string[]> => {
+  const { data, error } = await supabase
+    .from('video_tags')
+    .select('tag')
+    .order('tag');
+    
+  if (error) {
+    console.error("Error fetching video tags:", error);
+    throw error;
+  }
+  
+  return data ? data.map(item => item.tag) : [];
 };
