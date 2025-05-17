@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,12 +8,16 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Eye, EyeOff, LogIn } from "lucide-react";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [searchParams] = useSearchParams();
+  const defaultTab = searchParams.get("tab") === "signup" ? "signup" : "login";
   
   const { user, signIn, signUp } = useAuth();
   
@@ -58,11 +62,11 @@ const Auth = () => {
           <h1 className="text-3xl font-bold bg-gradient-to-r from-brand-blue to-brand-green-dark bg-clip-text text-transparent">
             tenurAItee
           </h1>
-          <p className="text-gray-600 mt-2">Log in to access your training resources</p>
+          <p className="text-gray-600 mt-2">Train to be a Tenured Customer Service Agent with AI</p>
         </div>
         
-        <Card>
-          <Tabs defaultValue="login" className="w-full">
+        <Card className="border-brand-blue/20 shadow-lg animate-fade-in">
+          <Tabs defaultValue={defaultTab} className="w-full">
             <TabsList className="grid grid-cols-2 mb-2">
               <TabsTrigger value="login">Log In</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
@@ -71,8 +75,8 @@ const Auth = () => {
             <TabsContent value="login">
               <form onSubmit={handleSignIn}>
                 <CardHeader>
-                  <CardTitle>Welcome back</CardTitle>
-                  <CardDescription>Enter your credentials to access your account</CardDescription>
+                  <CardTitle>Welcome Back</CardTitle>
+                  <CardDescription>Enter your credentials to access your training</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
@@ -84,6 +88,7 @@ const Auth = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
+                      className="transition-all duration-200 focus:border-brand-blue"
                     />
                   </div>
                   <div className="space-y-2">
@@ -93,23 +98,46 @@ const Auth = () => {
                         Forgot password?
                       </Button>
                     </div>
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                    />
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        className="pr-10 transition-all duration-200 focus:border-brand-blue"
+                      />
+                      <button
+                        type="button"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
                   </div>
                 </CardContent>
                 <CardFooter>
                   <Button
                     type="submit"
-                    className="w-full bg-brand-blue hover:bg-brand-blue-dark"
+                    className="w-full bg-brand-blue hover:bg-brand-blue-dark transition-all duration-200"
                     disabled={isSubmitting}
                   >
-                    {isSubmitting ? "Logging in..." : "Log In"}
+                    {isSubmitting ? (
+                      <span className="flex items-center gap-2">
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Logging in...
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-2">
+                        <LogIn size={18} />
+                        Log In
+                      </span>
+                    )}
                   </Button>
                 </CardFooter>
               </form>
@@ -118,7 +146,7 @@ const Auth = () => {
             <TabsContent value="signup">
               <form onSubmit={handleSignUp}>
                 <CardHeader>
-                  <CardTitle>Create an account</CardTitle>
+                  <CardTitle>Create Your Account</CardTitle>
                   <CardDescription>Enter your information to get started immediately</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -130,6 +158,7 @@ const Auth = () => {
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       required
+                      className="transition-all duration-200 focus:border-brand-blue"
                     />
                   </div>
                   <div className="space-y-2">
@@ -141,28 +170,55 @@ const Auth = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
+                      className="transition-all duration-200 focus:border-brand-blue"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="passwordSignup">Password</Label>
-                    <Input
-                      id="passwordSignup"
-                      type="password"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                    />
+                    <div className="relative">
+                      <Input
+                        id="passwordSignup"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        className="pr-10 transition-all duration-200 focus:border-brand-blue"
+                      />
+                      <button
+                        type="button"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Password must be at least 6 characters
+                    </p>
                   </div>
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="flex flex-col space-y-4">
                   <Button
                     type="submit"
-                    className="w-full bg-brand-blue hover:bg-brand-blue-dark"
+                    className="w-full bg-brand-blue hover:bg-brand-blue-dark transition-all duration-200 hover:scale-[1.02]"
                     disabled={isSubmitting}
                   >
-                    {isSubmitting ? "Creating account..." : "Create Account & Sign In"}
+                    {isSubmitting ? (
+                      <span className="flex items-center gap-2">
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Creating account...
+                      </span>
+                    ) : (
+                      "Create Account & Start Training"
+                    )}
                   </Button>
+                  <p className="text-xs text-center text-gray-500">
+                    By creating an account, you'll be automatically signed in and ready to start training immediately.
+                  </p>
                 </CardFooter>
               </form>
             </TabsContent>
