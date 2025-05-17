@@ -1,5 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -61,16 +62,18 @@ async function findRelevantKnowledgeArticles(message: string, supabase: any) {
   }
 }
 
-// Generate chat suggestions based on message
-function generateChatSuggestions(message: string) {
-  // In a real implementation, this would use a more sophisticated algorithm or AI model
-  const messageLower = message.toLowerCase();
+// Generate chat suggestions based on OpenAI response
+function generateChatSuggestions(message: string, aiResponse: string) {
+  // If the AI response already contains suggestions, we can extract them
+  // This is a fallback if the AI doesn't provide good suggestions
   
   const defaultSuggestions = [
     { id: "1", text: "Show me training scenarios" },
     { id: "2", text: "How do I improve my customer satisfaction score?" },
     { id: "3", text: "What are best practices for handling angry customers?" }
   ];
+  
+  const messageLower = message.toLowerCase();
   
   if (messageLower.includes('cancel') || messageLower.includes('flight')) {
     return [
@@ -92,45 +95,80 @@ function generateChatSuggestions(message: string) {
   return defaultSuggestions;
 }
 
-// Generate AI response to user message
+// Generate AI response using OpenAI GPT-4o mini
 async function generateAIResponse(message: string, history: any[], knowledgeArticles: any[]) {
-  // In a real implementation, this would call OpenAI or another LLM
-  // For now, we'll use a simple response generation logic based on keywords
-  const messageLower = message.toLowerCase();
+  const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
   
-  let response = "";
-  
-  if (messageLower.includes('help')) {
-    response = "I can help you with training scenarios, answer questions about customer service techniques, or provide feedback on your past performance. What would you like assistance with?";
-  } 
-  else if (messageLower.includes('scenario') || messageLower.includes('training')) {
-    response = "We have several scenarios available for practice. The 'Flight Cancellation' scenario is recommended for beginners. Would you like to try it?";
-  } 
-  else if (messageLower.includes('progress') || messageLower.includes('score')) {
-    response = "You're making great progress! You've completed 65% of your current level. Your customer satisfaction rating is above average. Keep practicing the de-escalation techniques to improve further.";
-  } 
-  else if (messageLower.includes('badge') || messageLower.includes('achievement')) {
-    response = "You currently have 8 badges. To earn the 'Knowledge Master' badge, you'll need to read all the basic knowledge articles.";
-  }
-  else if (messageLower.includes('refund') || messageLower.includes('money back')) {
-    response = "When handling refund requests, always verify the customer's eligibility first according to our policy. I've highlighted some relevant knowledge articles that might help.";
-  }
-  else if (messageLower.includes('streak')) {
-    response = "You're on a 5-day learning streak! Keep it up and you'll earn bonus XP. Try to complete at least one scenario each day to maintain your streak.";
-  }
-  else if (messageLower.includes('level')) {
-    response = "You're currently at Level 3: Advanced Agent. You need 2,500 more XP to reach Level 4, which will unlock additional advanced scenarios and special badges.";
-  }
-  else {
-    response = "That's an interesting question. I'd recommend practicing with more scenarios to improve in that area. Is there a specific skill you'd like to focus on?";
+  if (!OPENAI_API_KEY) {
+    console.error("OpenAI API key is not set");
+    throw new Error("OpenAI API key is not set");
   }
   
-  // If we have knowledge articles, mention them
-  if (knowledgeArticles.length > 0) {
-    response += " I've found some knowledge articles that might be helpful for you.";
+  try {
+    // Format the conversation history for OpenAI
+    const formattedHistory = history.map((msg: any) => ({
+      role: msg.role,
+      content: msg.content
+    }));
+    
+    // Create system message with context for the AI
+    let systemMessage = 
+      "You are an AI coach for customer service training. " +
+      "You help customer service agents improve their skills through interactive training. " +
+      "Your tone is professional, supportive, and encouraging. " +
+      "Provide concise, helpful advice based on best practices in customer service. " +
+      "Focus on de-escalation, empathy, and effective problem-solving techniques.";
+    
+    // If we have knowledge articles, include them in the system message
+    if (knowledgeArticles.length > 0) {
+      systemMessage += "\n\nRelevant knowledge articles:";
+      knowledgeArticles.forEach((article: any) => {
+        systemMessage += `\n- ${article.title}: ${article.excerpt}`;
+      });
+      systemMessage += "\n\nRefer to these articles when appropriate in your response.";
+    }
+    
+    // Prepare the messages array for OpenAI
+    const messages = [
+      { role: "system", content: systemMessage },
+      ...formattedHistory,
+      { role: "user", content: message }
+    ];
+    
+    console.log("Sending request to OpenAI with messages:", JSON.stringify(messages));
+    
+    // Call the OpenAI API
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: messages,
+        max_tokens: 500,
+        temperature: 0.7
+      })
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("OpenAI API error:", errorData);
+      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+    }
+    
+    const data = await response.json();
+    console.log("OpenAI response:", data);
+    
+    // Extract the assistant's response
+    const aiResponse = data.choices[0].message.content;
+    return aiResponse;
+    
+  } catch (error) {
+    console.error("Error generating AI response:", error);
+    return "I'm sorry, but I'm having trouble connecting to my knowledge base right now. Please try again in a moment.";
   }
-  
-  return response;
 }
 
 // Record chat message to database
@@ -293,9 +331,6 @@ serve(async (req) => {
     // Find relevant knowledge articles
     const knowledgeArticles = await findRelevantKnowledgeArticles(message, supabaseAdmin);
     
-    // Generate chat suggestions
-    const suggestions = generateChatSuggestions(message);
-    
     // Record the user's message
     await recordChatMessage(
       supabaseAdmin,
@@ -305,8 +340,11 @@ serve(async (req) => {
       'user'
     );
     
-    // Generate AI response
+    // Generate AI response using OpenAI
     const aiResponse = await generateAIResponse(message, history, knowledgeArticles);
+    
+    // Generate chat suggestions based on the AI response and message
+    const suggestions = generateChatSuggestions(message, aiResponse);
     
     // Record the assistant's response
     await recordChatMessage(

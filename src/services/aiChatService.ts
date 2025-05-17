@@ -15,14 +15,19 @@ export const sendChatMessage = async (
   sessionId?: string
 ): Promise<AICoachResponse> => {
   try {
+    // Prepare conversation history in the format expected by the API
+    const formattedHistory = conversationHistory
+      .slice(-8) // Only send the last 8 messages to avoid token limits
+      .map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }));
+
     // Send message to our Supabase Edge Function
     const { data, error } = await supabase.functions.invoke('enhanced-ai-chat', {
       body: {
         message,
-        history: conversationHistory.map(msg => ({
-          role: msg.role,
-          content: msg.content
-        })),
+        history: formattedHistory,
         sessionId
       }
     });
