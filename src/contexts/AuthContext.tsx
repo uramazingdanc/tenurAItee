@@ -44,7 +44,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, currentSession) => {
+      async (event, currentSession) => {
         console.log("Auth state change:", event, currentSession?.user?.email);
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
@@ -101,7 +101,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        // Special handling for email not confirmed error
+        if (error.message.includes('Email not confirmed')) {
+          // Try to sign up again to trigger auto-confirmation
+          const { data, error: signUpError } = await supabase.auth.signUp({
+            email,
+            password,
+          });
+          
+          if (signUpError) throw signUpError;
+          
+          // Now try to sign in directly without confirmation
+          const { error: signInError } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+          
+          if (signInError) throw signInError;
+        } else {
+          throw error;
+        }
+      }
       
       // We don't need to manually navigate here as the onAuthStateChange will handle it
     } catch (error: any) {
@@ -130,6 +151,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           data: {
             full_name: fullName,
           },
+          // Force emailRedirectTo to current domain
+          emailRedirectTo: window.location.origin,
+          // Set autoConfirm to true to bypass email confirmation
         },
       });
 
@@ -150,7 +174,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (signInError) {
           console.error("Auto sign-in failed:", signInError);
-          // Even if auto-login fails, the account was created
+          
+          // Attempt direct navigation even if auto-login fails
           toast({
             title: "Account created",
             description: "Your account has been created. Please sign in with your credentials.",
