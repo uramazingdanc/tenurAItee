@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import AIChatWidget from "@/components/AIChatWidget";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { motion } from "@/components/ui/motion";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { fetchDashboardData } from "@/services/dashboardService";
 import DashboardContent from "./DashboardContent";
@@ -15,7 +15,7 @@ const DashboardLayout = () => {
   const [isAIChatOpen, setIsAIChatOpen] = useState(false);
   const { user } = useAuth();
 
-  // Use React Query for data fetching
+  // Use React Query for data fetching with proper error handling
   const { data: dashboardData, error: dashboardError, isLoading } = useQuery({
     queryKey: ['dashboardData', user?.id],
     queryFn: fetchDashboardData,
