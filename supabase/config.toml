@@ -1,20 +1,29 @@
 
-# This file determines which Supabase Edge Functions to deploy.
-# After making changes to this file, you need to run:
-# 'npx supabase functions deploy <function_name>'
-# to deploy the changes.
-
 project_id = "ukfjfqmromsarzpewftm"
 
-[functions.ai-chat]
-verify_jwt = true
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage"]
 
+[db]
+port = 54322
+
+[studio]
+enabled = true
+port = 54323
+api_url = "http://localhost"
+
+[inbucket]
+enabled = true
+port = 54324
+
+[storage]
+enabled = true
+port = 54325
+
+[functions]
 [functions.enhanced-ai-chat]
 verify_jwt = true
-
-[functions.agent-progress]
+[functions.dashboard-data]
 verify_jwt = true
-
-# Function to handle authentication webhooks
-# [functions.auth-webhook]
-# verify_jwt = false
