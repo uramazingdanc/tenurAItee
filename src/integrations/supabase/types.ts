@@ -507,6 +507,57 @@ export type Database = {
           },
         ]
       }
+      user_module_progress: {
+        Row: {
+          created_at: string | null
+          id: string
+          module_id: string
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          module_id: string
+          status: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          module_id?: string
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_module_views: {
+        Row: {
+          id: string
+          module_id: string
+          time_spent: number | null
+          user_id: string
+          view_timestamp: string | null
+        }
+        Insert: {
+          id?: string
+          module_id: string
+          time_spent?: number | null
+          user_id: string
+          view_timestamp?: string | null
+        }
+        Update: {
+          id?: string
+          module_id?: string
+          time_spent?: number | null
+          user_id?: string
+          view_timestamp?: string | null
+        }
+        Relationships: []
+      }
       user_progress: {
         Row: {
           completed: boolean | null

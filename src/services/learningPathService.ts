@@ -133,6 +133,16 @@ Start → Identify symptoms → Check logs → Isolate variables → Test fix �
   }
 ];
 
+// Interface for the user_module_progress table
+interface UserModuleProgress {
+  id: string;
+  user_id: string;
+  module_id: string;
+  status: 'locked' | 'in-progress' | 'completed';
+  created_at: string;
+  updated_at: string;
+}
+
 export const getUserLearningPath = async (userId: string): Promise<KnowledgeModule[]> => {
   if (!userId) {
     return [...knowledgeModules];
@@ -152,7 +162,7 @@ export const getUserLearningPath = async (userId: string): Promise<KnowledgeModu
     
     // If we have user progress data, update the status accordingly
     if (userProgress && userProgress.length > 0) {
-      for (const progress of userProgress) {
+      for (const progress of userProgress as UserModuleProgress[]) {
         const moduleIndex = userModules.findIndex(m => m.id === progress.module_id);
         if (moduleIndex >= 0) {
           userModules[moduleIndex].status = progress.status;
