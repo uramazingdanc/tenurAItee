@@ -44,7 +44,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, currentSession) => {
+      (event, currentSession) => {
         console.log("Auth state change:", event, currentSession?.user?.email);
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
@@ -89,40 +89,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Clean up existing state
       cleanupAuthState();
       
-      // Attempt global sign out
-      try {
-        await supabase.auth.signOut({ scope: 'global' });
-      } catch (err) {
-        // Continue even if this fails
-      }
-      
+      // Attempt to sign in - email confirmation is now disabled in Supabase
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) {
-        // Special handling for email not confirmed error
-        if (error.message.includes('Email not confirmed')) {
-          // Try to sign up again to trigger auto-confirmation
-          const { data, error: signUpError } = await supabase.auth.signUp({
-            email,
-            password,
-          });
-          
-          if (signUpError) throw signUpError;
-          
-          // Now try to sign in directly without confirmation
-          const { error: signInError } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-          });
-          
-          if (signInError) throw signInError;
-        } else {
-          throw error;
-        }
-      }
+      if (error) throw error;
       
       // We don't need to manually navigate here as the onAuthStateChange will handle it
     } catch (error: any) {
@@ -143,7 +116,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Clean up existing state
       cleanupAuthState();
       
-      // First, create the user account
+      // Create the user account - email confirmation is now disabled in Supabase
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -151,9 +124,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           data: {
             full_name: fullName,
           },
-          // Force emailRedirectTo to current domain
-          emailRedirectTo: window.location.origin,
-          // Set autoConfirm to true to bypass email confirmation
         },
       });
 
@@ -162,11 +132,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (data.user) {
         console.log("Account created, attempting auto-login");
         
-        // Wait for a moment before trying to sign in
-        // This ensures the user is properly created in the database
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        // Now sign in with the credentials
+        // Since email confirmation is disabled, we should be able to sign in immediately
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -174,8 +140,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (signInError) {
           console.error("Auto sign-in failed:", signInError);
-          
-          // Attempt direct navigation even if auto-login fails
           toast({
             title: "Account created",
             description: "Your account has been created. Please sign in with your credentials.",
