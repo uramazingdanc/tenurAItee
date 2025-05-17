@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import AIChatWidget from "@/components/AIChatWidget";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
@@ -15,16 +15,39 @@ const DashboardLayout = () => {
   const [isAIChatOpen, setIsAIChatOpen] = useState(false);
   const { user } = useAuth();
 
-  // Use React Query for data fetching
-  const { data: dashboardData, error: dashboardError, isLoading } = useQuery({
+  // Use React Query for data fetching with explicit error handling
+  const { data: dashboardData, error: dashboardError, isLoading, refetch } = useQuery({
     queryKey: ['dashboardData', user?.id],
     queryFn: fetchDashboardData,
     enabled: !!user?.id,
     staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 2,
+    onError: (error) => {
+      console.error("Dashboard data fetch error:", error);
+      toast.error("Failed to load dashboard data", {
+        description: "Please try refreshing the page",
+        action: {
+          label: "Retry",
+          onClick: () => refetch()
+        }
+      });
+    }
   });
   
+  // Log data availability for debugging
+  useEffect(() => {
+    console.log("Dashboard data available:", !!dashboardData);
+    console.log("User authenticated:", !!user);
+    console.log("Loading state:", isLoading);
+    console.log("Error state:", !!dashboardError);
+    
+    if (dashboardData) {
+      console.log("Dashboard progress data:", dashboardData.progress);
+    }
+  }, [dashboardData, user, isLoading, dashboardError]);
+  
   // Demo effect to show a welcome toast
-  useState(() => {
+  useEffect(() => {
     if (user?.id) {
       const hasSeenWelcome = sessionStorage.getItem('welcomed');
       if (!hasSeenWelcome) {
@@ -40,7 +63,7 @@ const DashboardLayout = () => {
         }, 1500);
       }
     }
-  });
+  }, [user]);
 
   // Display loading state
   if (isLoading) {
@@ -48,14 +71,33 @@ const DashboardLayout = () => {
   }
 
   // Display error state
-  if (dashboardError || !dashboardData) {
+  if (dashboardError) {
     return <DashboardError error={dashboardError} />;
   }
 
+  // Handle case where data is missing but no error was thrown
+  if (!dashboardData) {
+    return <DashboardError error={new Error("Failed to load dashboard data")} />;
+  }
+
+  // Ensure we have default data structures to prevent errors
+  const safeData = {
+    ...dashboardData,
+    progress: dashboardData.progress || {
+      xp_points: 0,
+      current_level: 1,
+      current_streak: 0,
+      last_activity_date: new Date().toISOString()
+    },
+    completedScenarios: dashboardData.completedScenarios || [],
+    achievements: dashboardData.achievements || [],
+    recommendations: dashboardData.recommendations || []
+  };
+
   // Mock stats data since it's not in the actual data structure
   const userStats = {
-    scenariosCompleted: dashboardData.completedScenarios?.length || 0,
-    badgesEarned: dashboardData.achievements?.length || 0,
+    scenariosCompleted: safeData.completedScenarios?.length || 0,
+    badgesEarned: safeData.achievements?.length || 0,
     avgRating: 4.8
   };
 
@@ -70,7 +112,7 @@ const DashboardLayout = () => {
         <DashboardHeader user={user} />
         
         <DashboardContent 
-          dashboardData={dashboardData} 
+          dashboardData={safeData} 
           userStats={userStats}
         />
       </motion.div>

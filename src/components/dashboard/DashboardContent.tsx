@@ -1,4 +1,5 @@
-import React from "react";
+
+import React, { useEffect } from "react";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import ProgressSection from "./ProgressSection";
 import UserProgressCard from "./UserProgressCard";
@@ -20,13 +21,25 @@ interface DashboardContentProps {
 
 const DashboardContent = ({ dashboardData, userStats }: DashboardContentProps) => {
   // Convert dashboardData progress to expected format for ProgressSection
-  const progressData: any = {
+  const progressData = {
     level: dashboardData.progress?.current_level || 1,
+    xpProgress: dashboardData.progress?.xp_points ? 
+      Math.min(100, Math.round((dashboardData.progress?.xp_points / ((dashboardData.progress?.current_level || 1) * 100)) * 100)) : 5,
     currentXp: dashboardData.progress?.xp_points || 0,
     requiredXp: (dashboardData.progress?.current_level || 1) * 100,
     streak: dashboardData.progress?.current_streak || 0,
-    nextReward: "Badge"
+    nextReward: "Badge",
+    scenariosCompleted: userStats.scenariosCompleted,
+    badgesEarned: userStats.badgesEarned,
+    avgRating: userStats.avgRating,
+    skillName: "Advanced Problem Solving"
   };
+  
+  // Log processed data for debugging
+  useEffect(() => {
+    console.log("Content progressData:", progressData);
+    console.log("Raw dashboard progress:", dashboardData.progress);
+  }, [dashboardData.progress, progressData]);
 
   return (
     <>
@@ -103,7 +116,12 @@ const DashboardContent = ({ dashboardData, userStats }: DashboardContentProps) =
         
         <TabsContent value="progress">
           <ProgressSection 
-            xpProgress={progressData} 
+            level={progressData.level}
+            xpProgress={progressData.xpProgress}
+            scenariosCompleted={progressData.scenariosCompleted}
+            badgesEarned={progressData.badgesEarned}
+            avgRating={progressData.avgRating}
+            skillName={progressData.skillName}
           />
         </TabsContent>
         

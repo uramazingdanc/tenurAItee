@@ -58,6 +58,7 @@ export interface Recommendation {
   type: 'video' | 'article' | 'practice';
   duration: string;
   url?: string;
+  difficulty?: string;
 }
 
 export interface Achievement {
@@ -82,6 +83,16 @@ export interface Scenario {
 // Fetch dashboard data from Supabase Edge Function
 export const fetchDashboardData = async (): Promise<DashboardData> => {
   try {
+    console.log("Fetching dashboard data...");
+    
+    // Try to get the user before making the request
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData?.user) {
+      console.warn("No authenticated user found when fetching dashboard data");
+    } else {
+      console.log("User authenticated:", userData.user.id);
+    }
+    
     const { data, error } = await supabase.functions.invoke('dashboard-data', {
       // No body needed, will use JWT from supabase client
     });
@@ -90,8 +101,31 @@ export const fetchDashboardData = async (): Promise<DashboardData> => {
       console.error('Error fetching dashboard data:', error);
       throw error;
     }
-
-    return data;
+    
+    console.log("Dashboard data fetched successfully:", data);
+    
+    // Transform data to ensure consistent typing
+    return {
+      profile: data.profile || null,
+      progress: {
+        xp_points: data.progress?.xp_points || 0,
+        current_level: data.progress?.current_level || 1,
+        current_streak: data.progress?.current_streak || 0,
+        last_activity_date: data.progress?.last_activity_date || new Date().toISOString()
+      },
+      performance: {
+        response_accuracy: data.performance?.response_accuracy || 0,
+        issue_resolution_rate: data.performance?.issue_resolution_rate || 0,
+        customer_satisfaction: data.performance?.customer_satisfaction || 0,
+        improvement_areas: data.performance?.improvement_areas || [],
+        period_start: data.performance?.period_start || new Date().toISOString(),
+        period_end: data.performance?.period_end || new Date().toISOString()
+      },
+      completedScenarios: data.completedScenarios || [],
+      achievements: data.achievements || [],
+      recommendations: data.recommendations || [],
+      learningPath: data.learningPath || []
+    };
   } catch (error) {
     console.error('Failed to fetch dashboard data:', error);
     // Return default data for graceful degradation
