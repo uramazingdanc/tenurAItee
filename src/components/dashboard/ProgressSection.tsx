@@ -2,9 +2,10 @@
 import { motion } from "@/components/ui/motion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { AgentProgressData } from "@/services/dashboardService";
 
 interface ProgressSectionProps {
-  progress: number;
+  progress: AgentProgressData;
   userStats: {
     scenariosCompleted: number;
     badgesEarned: number;
@@ -13,6 +14,9 @@ interface ProgressSectionProps {
 }
 
 const ProgressSection = ({ progress, userStats }: ProgressSectionProps) => {
+  // Calculate progress percentage
+  const progressPercent = Math.round((progress.currentXp / progress.requiredXp) * 100);
+  
   // Animation variants for cards
   const cardVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -39,8 +43,8 @@ const ProgressSection = ({ progress, userStats }: ProgressSectionProps) => {
           </CardHeader>
           <CardContent>
             <div className="flex justify-between items-center mb-2">
-              <span className="font-medium text-sm">Level 3: Advanced Problem Solving</span>
-              <span className="text-sm text-gray-500">{progress}%</span>
+              <span className="font-medium text-sm">Level {progress.level}: Advanced Problem Solving</span>
+              <span className="text-sm text-gray-500">{progressPercent}%</span>
             </div>
             <motion.div
               initial={{ scaleX: 0 }}
@@ -48,7 +52,7 @@ const ProgressSection = ({ progress, userStats }: ProgressSectionProps) => {
               transition={{ duration: 1, ease: "easeOut" }}
               style={{ transformOrigin: "left" }}
             >
-              <Progress value={progress} className="h-2 mb-6" />
+              <Progress value={progressPercent} className="h-2 mb-6" />
             </motion.div>
             
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

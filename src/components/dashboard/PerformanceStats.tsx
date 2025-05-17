@@ -3,8 +3,13 @@ import { motion } from "@/components/ui/motion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { AgentPerformance } from "@/services/dashboardService";
 
-const PerformanceStats = () => {
+interface PerformanceStatsProps {
+  performance: AgentPerformance;
+}
+
+const PerformanceStats = ({ performance }: PerformanceStatsProps) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -20,25 +25,25 @@ const PerformanceStats = () => {
           <div>
             <div className="flex justify-between mb-1">
               <span className="text-sm">Customer Satisfaction</span>
-              <span className="text-sm font-medium">92%</span>
+              <span className="text-sm font-medium">{performance.customer_satisfaction}%</span>
             </div>
-            <Progress value={92} className="h-2" />
+            <Progress value={performance.customer_satisfaction} className="h-2" />
           </div>
           
           <div>
             <div className="flex justify-between mb-1">
               <span className="text-sm">Response Accuracy</span>
-              <span className="text-sm font-medium">87%</span>
+              <span className="text-sm font-medium">{performance.response_accuracy}%</span>
             </div>
-            <Progress value={87} className="h-2" />
+            <Progress value={performance.response_accuracy} className="h-2" />
           </div>
           
           <div>
             <div className="flex justify-between mb-1">
               <span className="text-sm">Issue Resolution Rate</span>
-              <span className="text-sm font-medium">78%</span>
+              <span className="text-sm font-medium">{performance.issue_resolution_rate}%</span>
             </div>
-            <Progress value={78} className="h-2" />
+            <Progress value={performance.issue_resolution_rate} className="h-2" />
           </div>
           
           <Separator className="my-4" />
@@ -46,14 +51,12 @@ const PerformanceStats = () => {
           <div>
             <h4 className="font-medium text-sm mb-3">Areas for improvement:</h4>
             <div className="space-y-2">
-              <div className="text-xs flex items-center">
-                <div className="w-2 h-2 rounded-full bg-amber-500 mr-2"></div>
-                <span>Handling multiple requests at once</span>
-              </div>
-              <div className="text-xs flex items-center">
-                <div className="w-2 h-2 rounded-full bg-amber-500 mr-2"></div>
-                <span>Policy explanation clarity</span>
-              </div>
+              {performance.improvement_areas.map((area, index) => (
+                <div key={index} className="text-xs flex items-center">
+                  <div className="w-2 h-2 rounded-full bg-amber-500 mr-2"></div>
+                  <span>{area.title}</span>
+                </div>
+              ))}
             </div>
           </div>
         </CardContent>

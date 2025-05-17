@@ -9,10 +9,13 @@ import {
   ChatMessage as ChatMessageType, 
   sendChatMessage, 
   getStoredConversation, 
-  storeConversation 
+  storeConversation,
+  getStoredSessionId,
+  storeSessionId
 } from "@/services/aiChatService";
+import { KnowledgeArticle, ChatSuggestion } from "@/types/chat";
 
-// Import our new components
+// Import our components
 import ChatMessage from "@/components/chat/ChatMessage";
 import ChatTypingIndicator from "@/components/chat/ChatTypingIndicator";
 import ChatHeader from "@/components/chat/ChatHeader";
@@ -26,14 +29,20 @@ interface AIChatWidgetProps {
 const AIChatWidget: React.FC<AIChatWidgetProps> = ({ isOpen, setIsOpen }) => {
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
   const [isTyping, setIsTyping] = useState(false);
+  const [sessionId, setSessionId] = useState<string>("");
+  const [knowledgeArticles, setKnowledgeArticles] = useState<KnowledgeArticle[]>([]);
+  const [suggestions, setSuggestions] = useState<ChatSuggestion[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   
-  // Load conversation history from storage when user loads or changes
+  // Load conversation history and session from storage when user loads or changes
   useEffect(() => {
     if (user?.id) {
       const storedMessages = getStoredConversation(user.id);
       setMessages(storedMessages);
+      
+      const storedSessionId = getStoredSessionId(user.id);
+      setSessionId(storedSessionId);
     }
   }, [user?.id]);
   
@@ -44,12 +53,19 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ isOpen, setIsOpen }) => {
     }
   }, [messages, user?.id]);
   
+  // Store session ID whenever it changes
+  useEffect(() => {
+    if (user?.id && sessionId) {
+      storeSessionId(user.id, sessionId);
+    }
+  }, [sessionId, user?.id]);
+  
   // Handle getting AI response from backend
   const handleGetAIResponse = async (userMessage: string) => {
     setIsTyping(true);
     
     try {
-      const aiResponse = await sendChatMessage(userMessage, messages);
+      const aiResponse = await sendChatMessage(userMessage, messages, sessionId);
       
       // Add AI response to messages
       setMessages(prev => [
@@ -62,10 +78,18 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ isOpen, setIsOpen }) => {
         },
       ]);
       
-      // Process any KB articles or suggestions if needed
-      if (aiResponse.kb_articles?.length) {
-        // Future enhancement: Display KB article cards
-        console.log("Knowledge base articles:", aiResponse.kb_articles);
+      // Store any updated session ID
+      if (aiResponse.sessionId && user?.id) {
+        setSessionId(aiResponse.sessionId);
+      }
+      
+      // Update knowledge articles and suggestions
+      if (aiResponse.knowledgeArticles) {
+        setKnowledgeArticles(aiResponse.knowledgeArticles);
+      }
+      
+      if (aiResponse.suggestions) {
+        setSuggestions(aiResponse.suggestions);
       }
     } catch (error) {
       console.error("Error fetching AI response:", error);
@@ -96,8 +120,17 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ isOpen, setIsOpen }) => {
     
     setMessages(prev => [...prev, userMessage]);
     
+    // Clear any previous KB articles and suggestions when user sends a message
+    setKnowledgeArticles([]);
+    setSuggestions([]);
+    
     // Generate AI response
     handleGetAIResponse(message);
+  };
+  
+  // Handle suggestion click
+  const handleSuggestionClick = (suggestion: string) => {
+    handleSubmit(suggestion);
   };
   
   // Scroll to bottom when messages change
@@ -157,12 +190,38 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ isOpen, setIsOpen }) => {
               {/* Messages area */}
               <ScrollArea className="h-80 p-3 pt-4 bg-gray-50">
                 <div className="flex flex-col gap-3">
-                  {messages.map(message => (
-                    <ChatMessage key={message.id} message={message} />
+                  {messages.map((message, index) => (
+                    <ChatMessage 
+                      key={message.id} 
+                      message={message} 
+                      knowledgeArticles={
+                        // Only show knowledge articles for the last assistant message
+                        message.role === "assistant" && 
+                        index === messages.length - 1 && 
+                        knowledgeArticles.length > 0 
+                          ? knowledgeArticles 
+                          : undefined
+                      }
+                    />
                   ))}
                   
                   {/* AI is typing indicator */}
                   {isTyping && <ChatTypingIndicator />}
+                  
+                  {/* Suggestions if available */}
+                  {!isTyping && suggestions && suggestions.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {suggestions.map((suggestion) => (
+                        <button
+                          key={suggestion.id}
+                          className="bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs px-3 py-1 rounded-full transition-colors"
+                          onClick={() => handleSuggestionClick(suggestion.text)}
+                        >
+                          {suggestion.text}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                   
                   {/* Invisible element to scroll to */}
                   <div ref={messagesEndRef} />

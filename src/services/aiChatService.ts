@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { AICoachResponse, ChatSuggestion, KnowledgeArticle } from '@/types/chat';
 
 export interface ChatMessage {
   id: string;
@@ -8,39 +9,39 @@ export interface ChatMessage {
   timestamp: Date;
 }
 
-export interface AIResponse {
-  message: string;
-  suggestions?: string[];
-  kb_articles?: {
-    id: string;
-    title: string;
-    excerpt: string;
-    url: string;
-  }[];
-}
-
 export const sendChatMessage = async (
   message: string, 
-  conversationHistory: ChatMessage[]
-): Promise<AIResponse> => {
+  conversationHistory: ChatMessage[],
+  sessionId?: string
+): Promise<AICoachResponse> => {
   try {
     // Send message to our Supabase Edge Function
-    const { data, error } = await supabase.functions.invoke('ai-chat', {
+    const { data, error } = await supabase.functions.invoke('enhanced-ai-chat', {
       body: {
         message,
         history: conversationHistory.map(msg => ({
           role: msg.role,
           content: msg.content
-        }))
+        })),
+        sessionId
       }
     });
 
     if (error) throw error;
 
+    // Format the suggestions as ChatSuggestion objects
+    const formattedSuggestions = data.suggestions 
+      ? data.suggestions.map((text: string, index: number) => ({
+          id: `sugg_${index}`,
+          text
+        }))
+      : undefined;
+
     return {
       message: data.response,
-      suggestions: data.suggestions,
-      kb_articles: data.kb_articles
+      suggestions: formattedSuggestions,
+      knowledgeArticles: data.kb_articles,
+      sessionId: data.sessionId
     };
   } catch (error) {
     console.error("Error sending chat message:", error);
@@ -73,6 +74,21 @@ export const getStoredConversation = (userId: string): ChatMessage[] => {
 // Store conversation in local storage
 export const storeConversation = (userId: string, messages: ChatMessage[]): void => {
   localStorage.setItem(`chat_history_${userId}`, JSON.stringify(messages));
+};
+
+// Get session ID from local storage or create new
+export const getStoredSessionId = (userId: string): string => {
+  const storedSessionId = localStorage.getItem(`chat_session_${userId}`);
+  if (storedSessionId) return storedSessionId;
+  
+  const newSessionId = crypto.randomUUID();
+  localStorage.setItem(`chat_session_${userId}`, newSessionId);
+  return newSessionId;
+};
+
+// Store session ID in local storage
+export const storeSessionId = (userId: string, sessionId: string): void => {
+  localStorage.setItem(`chat_session_${userId}`, sessionId);
 };
 
 // Default welcome message

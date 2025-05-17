@@ -1,1 +1,20 @@
+
+# This file determines which Supabase Edge Functions to deploy.
+# After making changes to this file, you need to run:
+# 'npx supabase functions deploy <function_name>'
+# to deploy the changes.
+
 project_id = "ukfjfqmromsarzpewftm"
+
+[functions.ai-chat]
+verify_jwt = true
+
+[functions.enhanced-ai-chat]
+verify_jwt = true
+
+[functions.agent-progress]
+verify_jwt = true
+
+# Function to handle authentication webhooks
+# [functions.auth-webhook]
+# verify_jwt = false

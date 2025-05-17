@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
-import { fetchUserProgress } from "@/services/scenarioService";
 import AIChatWidget from "@/components/AIChatWidget";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import ProgressSection from "@/components/dashboard/ProgressSection";
@@ -13,48 +12,22 @@ import LearningPathList from "@/components/dashboard/LearningPathList";
 import UserProgressCard from "@/components/dashboard/UserProgressCard";
 import RecommendationsList from "@/components/dashboard/RecommendationsList";
 import PerformanceStats from "@/components/dashboard/PerformanceStats";
-import { UserStats } from "@/types/scenario";
 import { motion } from "@/components/ui/motion";
 import { toast } from "@/components/ui/sonner";
 import { useQuery } from "@tanstack/react-query";
+import { fetchDashboardData, DashboardData } from "@/services/dashboardService";
 
 const Dashboard = () => {
   const [isAIChatOpen, setIsAIChatOpen] = useState(false);
   const { user } = useAuth();
 
   // Use React Query for data fetching
-  const { data: progressData, error: progressError } = useQuery({
-    queryKey: ['userProgress', user?.id],
-    queryFn: () => user?.id ? fetchUserProgress(user.id) : Promise.resolve([]),
+  const { data: dashboardData, error: dashboardError, isLoading } = useQuery({
+    queryKey: ['dashboardData', user?.id],
+    queryFn: fetchDashboardData,
     enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
-  
-  // Demo user stats - in a real implementation this would come from progressData
-  const [userStats] = useState<UserStats>({
-    scenariosCompleted: 12,
-    badgesEarned: 8,
-    avgRating: 4.8,
-  });
-  
-  // Calculate progress based on user data
-  const calculateProgress = () => {
-    if (!progressData || progressData.length === 0) return 65; // Default progress
-    
-    // Calculate based on completed scenarios vs total available
-    const completedCount = progressData.filter(p => p.completed).length;
-    const totalCount = progressData.length;
-    
-    return totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 65;
-  };
-  
-  const progress = calculateProgress();
-  
-  useEffect(() => {
-    if (progressError) {
-      console.error("Error fetching user progress:", progressError);
-      toast.error("Failed to load your progress data. Please try again later.");
-    }
-  }, [progressError]);
   
   // Demo effect to show a welcome toast
   useEffect(() => {
@@ -75,6 +48,43 @@ const Dashboard = () => {
     }
   }, [user?.id]);
 
+  // Display loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 pt-20 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-blue mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Display error state
+  if (dashboardError || !dashboardData) {
+    return (
+      <div className="min-h-screen bg-gray-50 pt-20 flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle>Error Loading Dashboard</CardTitle>
+            <CardDescription>We encountered a problem loading your dashboard data.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-red-500 mb-4">
+              {dashboardError instanceof Error ? dashboardError.message : "Unknown error"}
+            </p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="bg-brand-blue text-white px-4 py-2 rounded hover:bg-brand-blue-dark"
+            >
+              Retry
+            </button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 pt-20">
       <motion.div 
@@ -88,7 +98,10 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
             {/* Progress Section */}
-            <ProgressSection progress={progress} userStats={userStats} />
+            <ProgressSection 
+              progress={dashboardData.progress} 
+              userStats={dashboardData.stats} 
+            />
 
             {/* Tabs Section */}
             <Tabs defaultValue="scenarios">
@@ -105,7 +118,10 @@ const Dashboard = () => {
                     <CardDescription>Practice with these customer service scenarios</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <ScenariosList />
+                    <ScenariosList 
+                      completedScenarios={dashboardData.scenarios.completed}
+                      inProgressScenarios={dashboardData.scenarios.inProgress}
+                    />
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -117,7 +133,7 @@ const Dashboard = () => {
                     <CardDescription>Badges and rewards you've earned</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <AchievementsList />
+                    <AchievementsList achievements={dashboardData.achievements} />
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -129,7 +145,7 @@ const Dashboard = () => {
                     <CardDescription>Follow this path to mastery</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <LearningPathList />
+                    <LearningPathList level={dashboardData.progress.level} />
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -138,13 +154,15 @@ const Dashboard = () => {
           
           <div className="space-y-6">
             {/* User Progress Card */}
-            <UserProgressCard />
+            <UserProgressCard 
+              xpProgress={dashboardData.progress}
+            />
             
             {/* Recommendations */}
-            <RecommendationsList />
+            <RecommendationsList recommendations={dashboardData.recommendations} />
             
             {/* Performance Stats */}
-            <PerformanceStats />
+            <PerformanceStats performance={dashboardData.performance} />
           </div>
         </div>
       </motion.div>

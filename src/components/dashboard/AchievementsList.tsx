@@ -2,42 +2,13 @@
 import { motion } from "@/components/ui/motion";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { Achievement } from "@/services/dashboardService";
 
-interface AchievementItemProps {
-  name: string;
-  description: string;
-  icon: string;
-  unlocked: boolean;
+interface AchievementsListProps {
+  achievements: Achievement[];
 }
 
-const AchievementsList = () => {
-  const achievements: AchievementItemProps[] = [
-    {
-      name: "First Call",
-      description: "Completed your first call scenario",
-      icon: "🎯",
-      unlocked: true
-    },
-    {
-      name: "Problem Solver",
-      description: "Successfully resolved 5 customer issues",
-      icon: "🔍",
-      unlocked: true
-    },
-    {
-      name: "De-escalation Pro",
-      description: "Calmed 3 upset customers",
-      icon: "😌",
-      unlocked: true
-    },
-    {
-      name: "Knowledge Master",
-      description: "Read all basic knowledge articles",
-      icon: "📚",
-      unlocked: false
-    }
-  ];
-
+const AchievementsList = ({ achievements }: AchievementsListProps) => {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
       {achievements.map((badge, index) => (
@@ -47,7 +18,7 @@ const AchievementsList = () => {
   );
 };
 
-const AchievementItem = ({ name, description, icon, unlocked, index }: AchievementItemProps & { index: number }) => {
+const AchievementItem = ({ name, description, icon, unlocked, index }: Achievement & { index: number }) => {
   return (
     <motion.div
       key={index}

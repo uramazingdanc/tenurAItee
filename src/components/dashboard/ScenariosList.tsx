@@ -3,50 +3,43 @@ import { motion } from "@/components/ui/motion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Scenario } from "@/services/dashboardService";
 
-interface ScenarioItemProps {
-  title: string;
-  description: string;
-  difficulty: "Beginner" | "Intermediate" | "Advanced";
-  completion: number;
-  status: "completed" | "in-progress" | "locked";
+interface ScenariosListProps {
+  completedScenarios: Scenario[];
+  inProgressScenarios: Scenario[];
 }
 
-const ScenariosList = () => {
-  const scenarios: ScenarioItemProps[] = [
+const ScenariosList = ({ completedScenarios, inProgressScenarios }: ScenariosListProps) => {
+  // Combine completed and in-progress scenarios
+  const scenarios = [
+    ...completedScenarios.map(s => ({ ...s, status: "completed" as const })),
+    ...inProgressScenarios.map(s => ({ ...s, status: "in-progress" as const }))
+  ];
+
+  // Add a locked scenario for demo
+  const allScenarios = [
+    ...scenarios,
     {
-      title: "Flight Cancellation",
-      description: "Handle a customer requesting a flight cancellation due to emergency",
-      difficulty: "Beginner",
-      completion: 100,
-      status: "completed"
-    },
-    {
-      title: "Booking Modification",
-      description: "Help customer change travel dates and accommodate special requests",
-      difficulty: "Intermediate",
-      completion: 75,
-      status: "in-progress"
-    },
-    {
+      id: "locked-scenario",
       title: "Lost Luggage Complaint",
       description: "Address customer concerns about lost luggage and file a claim",
-      difficulty: "Advanced",
-      completion: 0,
-      status: "locked"
+      difficulty: "Advanced" as const,
+      category: "Complaints",
+      status: "locked" as const
     }
   ];
 
   return (
     <div className="space-y-4">
-      {scenarios.map((scenario, index) => (
-        <ScenarioItem key={index} index={index} {...scenario} />
+      {allScenarios.map((scenario, index) => (
+        <ScenarioItem key={scenario.id} index={index} {...scenario} />
       ))}
     </div>
   );
 };
 
-const ScenarioItem = ({ title, description, difficulty, completion, status, index }: ScenarioItemProps & { index: number }) => {
+const ScenarioItem = ({ title, description, difficulty, completion = 0, status, index }: Scenario & { index: number }) => {
   return (
     <motion.div 
       key={index} 
@@ -68,7 +61,7 @@ const ScenarioItem = ({ title, description, difficulty, completion, status, inde
           </Badge>
         </div>
         <p className="text-gray-500 text-sm">{description}</p>
-        {completion > 0 && completion < 100 && (
+        {status === "in-progress" && (
           <div className="mt-2">
             <div className="flex justify-between items-center mb-1">
               <span className="text-xs text-gray-500">Progress</span>

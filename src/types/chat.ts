@@ -15,4 +15,5 @@ export interface AICoachResponse {
   message: string;
   suggestions?: ChatSuggestion[];
   knowledgeArticles?: KnowledgeArticle[];
+  sessionId?: string;
 }
