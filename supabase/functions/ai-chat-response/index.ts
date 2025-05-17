@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
@@ -44,7 +45,7 @@ serve(async (req) => {
       historyLength: history.length
     }));
     
-    // Call OpenAI API
+    // Call OpenAI API to generate customer response
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -70,6 +71,18 @@ serve(async (req) => {
     // Determine emotion based on content analysis
     const emotion = determineEmotion(aiResponse, step);
 
+    // Score the agent's response if it's not the first step
+    let responseScore = null;
+    let responseFeedback = null;
+    
+    if (agentResponse && step > 1) {
+      const scoreData = await scoreAgentResponse(apiKey, history, agentResponse, scenario);
+      responseScore = scoreData.score;
+      responseFeedback = scoreData.feedback;
+      
+      console.log('Agent response scored:', responseScore, responseFeedback);
+    }
+
     // If userId is provided, log this interaction to the database
     if (userId) {
       try {
@@ -90,8 +103,22 @@ serve(async (req) => {
             message: aiResponse,
             session_id: history.length > 0 ? history[0].sessionId : null,
           });
+        
+        // If we have a score, save it to the scenario_response_scores table
+        if (responseScore !== null && userId) {
+          await supabaseAdmin
+            .from('scenario_response_scores')
+            .insert({
+              user_id: userId,
+              scenario_id: scenario,
+              step: step,
+              score: responseScore,
+              feedback: responseFeedback,
+              agent_response: agentResponse
+            });
+        }
           
-        console.log('Successfully logged chat interaction');
+        console.log('Successfully logged chat interaction and score');
       } catch (dbError) {
         // Just log the error but don't fail the whole request
         console.error('Failed to log interaction:', dbError);
@@ -101,7 +128,9 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         message: aiResponse,
-        emotion: emotion
+        emotion: emotion,
+        score: responseScore,
+        feedback: responseFeedback
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
@@ -114,6 +143,94 @@ serve(async (req) => {
     );
   }
 });
+
+// Score the agent's response using GPT-4o mini
+async function scoreAgentResponse(apiKey: string, history: any[], agentResponse: string, scenario: string): Promise<{ score: number, feedback: string }> {
+  try {
+    // Construct the prompt for scoring
+    const conversationContext = history
+      .map(item => `${item.speaker}: ${item.message}`)
+      .join('\n');
+    
+    const scoringPrompt = `
+You are an AI evaluator assessing a customer service agent's response quality in a ${scenario} scenario.
+
+Conversation context:
+${conversationContext}
+
+Agent's latest response: "${agentResponse}"
+
+Score the response on a scale of 0 to 100 based on:
+- Accuracy of information
+- Empathy and tone
+- Clarity and professionalism
+- Completeness of answer
+- Adherence to company policies
+
+Return ONLY JSON with the following format:
+{
+  "score": <number>,
+  "feedback": "<brief constructive feedback>"
+}
+`;
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: "system", content: "You are an expert customer service trainer that evaluates agent responses." },
+          { role: "user", content: scoringPrompt }
+        ],
+        max_tokens: 200,
+        temperature: 0.5
+      })
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(`OpenAI API error: ${error.error?.message || JSON.stringify(error)}`);
+    }
+    
+    const data = await response.json();
+    const content = data.choices[0].message.content;
+    
+    // Parse JSON from the content
+    try {
+      // Find JSON object in the response text
+      const jsonMatch = content.match(/({[\s\S]*})/);
+      if (jsonMatch) {
+        const scoreData = JSON.parse(jsonMatch[0]);
+        return {
+          score: scoreData.score || 0,
+          feedback: scoreData.feedback || "No specific feedback available."
+        };
+      }
+      
+      // Fallback if JSON parsing fails
+      return {
+        score: 50, // Default middle score
+        feedback: "Could not generate specific feedback."
+      };
+    } catch (parseError) {
+      console.error('Failed to parse score data:', parseError);
+      return {
+        score: 50, // Default middle score
+        feedback: "Could not generate specific feedback."
+      };
+    }
+  } catch (error) {
+    console.error('Error scoring agent response:', error);
+    return {
+      score: 50, // Default middle score
+      feedback: "Error generating feedback."
+    };
+  }
+}
 
 function generateSystemPrompt(scenario: string): string {
   let basePrompt = "You are a customer in a simulated call with a customer service agent. ";

@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { textToSpeech, voices } from "@/services/elevenLabsService";
 import { 
@@ -5,7 +6,8 @@ import {
   generateCallFeedback, 
   saveCallProgress, 
   CallScenario, 
-  CallStep 
+  CallStep,
+  getUnlockedScenarios
 } from "@/services/callScenarioService";
 import { toast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -19,6 +21,10 @@ export interface CallSimulationState {
   selectedScenario: CallScenario | null;
   callStatus: 'selecting' | 'in-progress' | 'completed';
   feedbackMessage: string | null;
+  currentScore: number | null;
+  averageScore: number | null;
+  passThreshold: number | null;
+  unlockedScenarios: string[];
 }
 
 export function useCallSimulation() {
@@ -30,12 +36,36 @@ export function useCallSimulation() {
     audioUrl: null,
     selectedScenario: null,
     callStatus: 'selecting',
-    feedbackMessage: null
+    feedbackMessage: null,
+    currentScore: null,
+    averageScore: null,
+    passThreshold: null,
+    unlockedScenarios: []
   });
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { user } = useAuth();
 
+  // Fetch unlocked scenarios when user changes
+  useEffect(() => {
+    const fetchUnlockedScenarios = async () => {
+      if (user) {
+        const unlocked = await getUnlockedScenarios(user.id);
+        setState(prev => ({
+          ...prev,
+          unlockedScenarios: unlocked
+        }));
+      } else {
+        setState(prev => ({
+          ...prev, 
+          unlockedScenarios: ["flightCancellation"] // Only first scenario unlocked if not logged in
+        }));
+      }
+    };
+    
+    fetchUnlockedScenarios();
+  }, [user]);
+  
   // Start a scenario
   const startScenario = (scenario: CallScenario) => {
     setState(prev => ({
@@ -43,7 +73,8 @@ export function useCallSimulation() {
       selectedScenario: scenario,
       transcript: [scenario.steps[0]],
       currentStep: 1,
-      callStatus: 'in-progress'
+      callStatus: 'in-progress',
+      passThreshold: scenario.passingScore || 70
     }));
     
     // Generate audio for the first customer message
@@ -66,7 +97,8 @@ export function useCallSimulation() {
     setState(prev => ({
       ...prev,
       transcript: updatedTranscript,
-      isLoading: true
+      isLoading: true,
+      currentScore: null // Reset current score while loading
     }));
 
     try {
@@ -78,6 +110,34 @@ export function useCallSimulation() {
         response,
         user?.id // Pass user ID to log interaction
       );
+
+      // Update agent step with score and feedback if available
+      if (customerResponse.score !== undefined) {
+        agentStep.score = customerResponse.score;
+        agentStep.feedback = customerResponse.feedback;
+        
+        // Calculate running average score
+        const scoredResponses = updatedTranscript
+          .filter(step => step.speaker === "Agent" && step.score !== undefined)
+          .map(step => step.score as number);
+        
+        const totalScore = scoredResponses.reduce((sum, score) => sum + score, 0);
+        const averageScore = scoredResponses.length > 0 
+          ? Math.round(totalScore / scoredResponses.length) 
+          : 0;
+        
+        updatedTranscript[updatedTranscript.length - 1] = agentStep;
+        
+        // Show toast with feedback
+        if (customerResponse.feedback) {
+          toast({
+            title: `Response Score: ${customerResponse.score}%`,
+            description: customerResponse.feedback,
+            variant: customerResponse.score >= 80 ? "default" : 
+                    customerResponse.score >= 60 ? "secondary" : "destructive",
+          });
+        }
+      }
 
       // Final step check
       if (state.currentStep >= 5) {
@@ -100,14 +160,45 @@ export function useCallSimulation() {
         // Generate feedback
         const feedback = await generateCallFeedback(state.selectedScenario.id, finalTranscript);
         
+        // Calculate final score
+        const scoredResponses = finalTranscript
+          .filter(step => step.speaker === "Agent" && step.score !== undefined)
+          .map(step => step.score as number);
+        
+        const totalScore = scoredResponses.reduce((sum, score) => sum + score, 0);
+        const averageScore = scoredResponses.length > 0 
+          ? Math.round(totalScore / scoredResponses.length) 
+          : 0;
+        
+        const passed = averageScore >= (state.selectedScenario.passingScore || 70);
+        
         setState(prev => ({
           ...prev,
-          feedbackMessage: feedback
+          feedbackMessage: feedback,
+          averageScore: averageScore
         }));
         
         // Save progress if user is logged in
         if (user) {
-          await saveCallProgress(user.id, state.selectedScenario.id, finalTranscript, 85);
+          const saveResult = await saveCallProgress(user.id, state.selectedScenario.id, finalTranscript, averageScore);
+          
+          if (saveResult.success && saveResult.passed) {
+            // Refresh unlocked scenarios if passed
+            const unlocked = await getUnlockedScenarios(user.id);
+            setState(prev => ({
+              ...prev,
+              unlockedScenarios: unlocked
+            }));
+            
+            // If they passed a new scenario, show a toast
+            if (unlocked.length > state.unlockedScenarios.length) {
+              toast({
+                title: "New Scenario Unlocked!",
+                description: "You've unlocked a new training scenario.",
+                variant: "default",
+              });
+            }
+          }
         }
         
         return;
@@ -124,11 +215,23 @@ export function useCallSimulation() {
       // Update transcript with customer response
       const newTranscript = [...updatedTranscript, customerStep];
       
+      // Calculate running average score for the current scenario
+      const scoredResponses = newTranscript
+        .filter(step => step.speaker === "Agent" && step.score !== undefined)
+        .map(step => step.score as number);
+      
+      const totalScore = scoredResponses.reduce((sum, score) => sum + score, 0);
+      const averageScore = scoredResponses.length > 0 
+        ? Math.round(totalScore / scoredResponses.length) 
+        : null;
+      
       setState(prev => ({
         ...prev,
         transcript: newTranscript,
         currentStep: prev.currentStep + 1,
-        isLoading: false
+        isLoading: false,
+        currentScore: agentStep.score || null,
+        averageScore: averageScore
       }));
       
       // Generate audio for customer response
@@ -217,7 +320,8 @@ export function useCallSimulation() {
 
   // Reset simulation
   const resetSimulation = () => {
-    setState({
+    setState(prev => ({
+      ...prev,
       isPlaying: false,
       currentStep: 0,
       transcript: [],
@@ -225,8 +329,10 @@ export function useCallSimulation() {
       audioUrl: null,
       selectedScenario: null,
       callStatus: 'selecting',
-      feedbackMessage: null
-    });
+      feedbackMessage: null,
+      currentScore: null,
+      averageScore: null
+    }));
     
     if (audioRef.current) {
       audioRef.current.pause();

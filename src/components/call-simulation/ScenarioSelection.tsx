@@ -6,13 +6,19 @@ import { CallScenario } from "@/services/callScenarioService";
 import { useQuery } from "@tanstack/react-query";
 import { fetchScenarios, getScenarioDuration } from "@/services/scenarioService";
 import { useAuth } from "@/contexts/AuthContext";
+import { Lock, Unlock } from "lucide-react";
 
 interface ScenarioSelectionProps {
   scenarios: CallScenario[];
   onSelectScenario: (scenario: CallScenario) => void;
+  unlockedScenarioIds?: string[];
 }
 
-const ScenarioSelection = ({ scenarios, onSelectScenario }: ScenarioSelectionProps) => {
+const ScenarioSelection = ({ 
+  scenarios, 
+  onSelectScenario,
+  unlockedScenarioIds = ["flightCancellation"] // First scenario is always unlocked by default
+}: ScenarioSelectionProps) => {
   const { user } = useAuth();
   const { data: backendScenarios, isLoading } = useQuery({
     queryKey: ['scenarios', user?.id],
@@ -30,7 +36,11 @@ const ScenarioSelection = ({ scenarios, onSelectScenario }: ScenarioSelectionPro
       emotion: "neutral"
     }],
     duration: getScenarioDuration(s.title),
-  })) : scenarios;
+    unlocked: unlockedScenarioIds.includes(s.id)
+  })) : scenarios.map(s => ({
+    ...s,
+    unlocked: unlockedScenarioIds.includes(s.id)
+  }));
 
   if (isLoading) {
     return (
@@ -58,11 +68,22 @@ const ScenarioSelection = ({ scenarios, onSelectScenario }: ScenarioSelectionPro
       {displayScenarios.map((scenario) => (
         <Card 
           key={scenario.id} 
-          className="cursor-pointer hover:shadow-md transition-shadow"
-          onClick={() => onSelectScenario(scenario)}
+          className={`transition-all ${
+            scenario.unlocked 
+              ? "cursor-pointer hover:shadow-md" 
+              : "opacity-70 cursor-not-allowed"
+          }`}
+          onClick={() => scenario.unlocked ? onSelectScenario(scenario) : null}
         >
           <CardHeader className="bg-gradient-to-r from-brand-blue/10 to-brand-green/10 border-b">
-            <CardTitle>{scenario.title}</CardTitle>
+            <div className="flex justify-between items-start">
+              <CardTitle>{scenario.title}</CardTitle>
+              {scenario.unlocked ? (
+                <Unlock className="h-4 w-4 text-green-500" />
+              ) : (
+                <Lock className="h-4 w-4 text-gray-400" />
+              )}
+            </div>
             <CardDescription>{scenario.description}</CardDescription>
           </CardHeader>
           <CardContent className="pt-4">
@@ -78,6 +99,11 @@ const ScenarioSelection = ({ scenarios, onSelectScenario }: ScenarioSelectionPro
               </Badge>
               <span className="text-sm text-gray-500">{scenario.duration} min</span>
             </div>
+            {!scenario.unlocked && (
+              <p className="text-xs text-gray-500 mt-2">
+                Complete previous scenarios to unlock
+              </p>
+            )}
           </CardContent>
         </Card>
       ))}

@@ -9,6 +9,7 @@ import { useCallSimulation } from "@/hooks/useCallSimulation";
 import ScenarioSelection from "./call-simulation/ScenarioSelection";
 import ConversationInterface from "./call-simulation/ConversationInterface";
 import FeedbackSection from "./call-simulation/FeedbackSection";
+import ScoreDisplay from "./call-simulation/ScoreDisplay";
 
 const CallSimulation = () => {
   const {
@@ -29,7 +30,11 @@ const CallSimulation = () => {
     isLoading, 
     selectedScenario, 
     callStatus, 
-    feedbackMessage 
+    feedbackMessage,
+    currentScore,
+    averageScore,
+    passThreshold,
+    unlockedScenarios
   } = state;
 
   return (
@@ -49,6 +54,7 @@ const CallSimulation = () => {
             <ScenarioSelection 
               scenarios={SCENARIOS}
               onSelectScenario={startScenario}
+              unlockedScenarioIds={unlockedScenarios}
             />
           )}
 
@@ -70,6 +76,14 @@ const CallSimulation = () => {
                     {selectedScenario.difficulty}
                   </Badge>
                 </div>
+                
+                {callStatus === 'in-progress' && averageScore !== null && (
+                  <ScoreDisplay 
+                    currentScore={currentScore} 
+                    averageScore={averageScore} 
+                    passThreshold={passThreshold || 70}
+                  />
+                )}
               </CardHeader>
               <CardContent className="pt-6">
                 {callStatus === 'in-progress' && (
@@ -90,6 +104,8 @@ const CallSimulation = () => {
                     transcript={transcript}
                     onReset={resetSimulation}
                     scenarioId={selectedScenario.id}
+                    averageScore={averageScore}
+                    passThreshold={passThreshold}
                   />
                 )}
               </CardContent>
