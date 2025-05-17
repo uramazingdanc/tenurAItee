@@ -132,7 +132,7 @@ const FeedbackSection = ({
             <p className="text-sm mb-2">{item.message}</p>
             {item.feedback && (
               <div className="text-xs bg-gray-50 p-2 rounded mt-2 italic text-gray-600">
-                Feedback: {item.feedback}
+                <span className="font-medium">Feedback:</span> {item.feedback}
               </div>
             )}
           </div>
@@ -151,3 +151,4 @@ const FeedbackSection = ({
 export default FeedbackSection;
 
 import { Badge } from "@/components/ui/badge";
+

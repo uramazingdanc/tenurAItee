@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
@@ -76,6 +75,7 @@ serve(async (req) => {
     let responseFeedback = null;
     
     if (agentResponse && step > 1) {
+      // Use a separate API call to ensure we always get feedback
       const scoreData = await scoreAgentResponse(apiKey, history, agentResponse, scenario);
       responseScore = scoreData.score;
       responseFeedback = scoreData.feedback;
@@ -172,8 +172,11 @@ Return ONLY JSON with the following format:
   "score": <number>,
   "feedback": "<brief constructive feedback>"
 }
+
+The feedback MUST contain specific actionable advice on how to improve the response. Be specific and detailed.
 `;
 
+    // Make a separate API call with a specific focus on generating feedback
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -183,11 +186,14 @@ Return ONLY JSON with the following format:
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages: [
-          { role: "system", content: "You are an expert customer service trainer that evaluates agent responses." },
+          { 
+            role: "system", 
+            content: "You are an expert customer service trainer that evaluates agent responses. Always provide detailed feedback with specific improvement suggestions." 
+          },
           { role: "user", content: scoringPrompt }
         ],
-        max_tokens: 200,
-        temperature: 0.5
+        max_tokens: 300, // Increased max tokens to allow for more detailed feedback
+        temperature: 0.3  // Reduced temperature for more consistent outputs
       })
     });
     
@@ -199,35 +205,54 @@ Return ONLY JSON with the following format:
     const data = await response.json();
     const content = data.choices[0].message.content;
     
+    console.log("Feedback generation raw response:", content);
+    
     // Parse JSON from the content
     try {
       // Find JSON object in the response text
       const jsonMatch = content.match(/({[\s\S]*})/);
       if (jsonMatch) {
         const scoreData = JSON.parse(jsonMatch[0]);
+        
+        // Validate the response contains required fields
+        if (!scoreData.score) {
+          throw new Error('Missing score in response');
+        }
+        
         return {
-          score: scoreData.score || 0,
+          score: Math.round(scoreData.score) || 0,
           feedback: scoreData.feedback || "No specific feedback available."
+        };
+      }
+      
+      // If JSON parsing fails, try to extract score and feedback from the text
+      const scoreMatch = content.match(/score[\"'\s]*[:=][\"'\s]*(\d+)/i);
+      const feedbackMatch = content.match(/feedback[\"'\s]*[:=][\"'\s]*["']([^"']+)["']/i);
+      
+      if (scoreMatch) {
+        return {
+          score: parseInt(scoreMatch[1]) || 50,
+          feedback: feedbackMatch ? feedbackMatch[1] : "Could not parse specific feedback."
         };
       }
       
       // Fallback if JSON parsing fails
       return {
         score: 50, // Default middle score
-        feedback: "Could not generate specific feedback."
+        feedback: "The response was average. Consider adding more specific details and showing more empathy."
       };
     } catch (parseError) {
-      console.error('Failed to parse score data:', parseError);
+      console.error('Failed to parse score data:', parseError, 'Raw content:', content);
       return {
         score: 50, // Default middle score
-        feedback: "Could not generate specific feedback."
+        feedback: "Could not generate specific feedback. Try to be more clear and empathetic in your customer service responses."
       };
     }
   } catch (error) {
     console.error('Error scoring agent response:', error);
     return {
       score: 50, // Default middle score
-      feedback: "Error generating feedback."
+      feedback: "Error generating feedback. Focus on clarity, accuracy, and empathy in your customer service responses."
     };
   }
 }
