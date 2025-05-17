@@ -8,14 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search, BookOpen, Phone, FileText, Ban, CreditCard } from "lucide-react";
-import { fetchKnowledgeCategories } from "@/services/knowledgeService";
+import { fetchKnowledgeItems, KnowledgeCategory } from "@/services/knowledgeService";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion } from '@/components/ui/motion';
 import { KnowledgeModule, getUserLearningPath } from '@/services/learningPathService';
 import { KnowledgeModulePopup } from './learning-path/KnowledgeModulePopup';
 
 // Knowledge categories based on the requested tabs
-const KNOWLEDGE_CATEGORIES = [
+const KNOWLEDGE_CATEGORIES: KnowledgeCategory[] = [
   {
     id: 'handling_calls',
     name: 'Handling Calls',
@@ -60,9 +60,9 @@ const KnowledgeBase = () => {
   const [currentTab, setCurrentTab] = useState('handling_calls');
   
   // Fetch knowledge categories from backend
-  const { data: categories, isLoading: isCategoriesLoading } = useQuery({
+  const { data: categories = [], isLoading: isCategoriesLoading } = useQuery({
     queryKey: ['knowledgeCategories'],
-    queryFn: fetchKnowledgeCategories,
+    queryFn: () => Promise.resolve([] as KnowledgeCategory[]), // We're using hardcoded categories for now
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
@@ -74,7 +74,7 @@ const KnowledgeBase = () => {
   });
 
   // Determine which categories to display - backend data or fallback
-  const displayCategories = categories?.length ? categories : KNOWLEDGE_CATEGORIES;
+  const displayCategories = categories.length > 0 ? categories : KNOWLEDGE_CATEGORIES;
 
   // Filter knowledge items by search query if provided
   const filteredCategories = searchQuery.trim() 

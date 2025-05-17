@@ -2,13 +2,12 @@
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LucideIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 interface FeatureCardProps {
   icon: LucideIcon;
   title: string;
   description: string;
-  linkTo: string;
+  linkTo?: string;
   iconColor?: string;
   iconBgColor?: string;
   isLocked?: boolean;

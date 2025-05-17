@@ -9,6 +9,14 @@ export type KnowledgeItem = {
   is_premium: boolean | null;
 };
 
+export type KnowledgeCategory = {
+  id: string;
+  name: string;
+  description: string;
+  icon: any;
+  quizExample?: string;
+};
+
 export const fetchKnowledgeItems = async (includePremium: boolean = false): Promise<KnowledgeItem[]> => {
   const query = supabase
     .from('knowledge_items')
@@ -27,6 +35,25 @@ export const fetchKnowledgeItems = async (includePremium: boolean = false): Prom
   }
   
   return data || [];
+};
+
+// Added this new function
+export const fetchKnowledgeCategories = async (): Promise<KnowledgeCategory[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('knowledge_categories')
+      .select('*');
+      
+    if (error) {
+      console.error("Error fetching knowledge categories:", error);
+      return [];
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error("Error fetching knowledge categories:", error);
+    return [];
+  }
 };
 
 export const fetchKnowledgeItemsByCategory = async (category: string, includePremium: boolean = false): Promise<KnowledgeItem[]> => {

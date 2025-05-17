@@ -130,12 +130,14 @@ const LearningPath = () => {
         </motion.div>
       ))}
 
-      <KnowledgeModulePopup
-        module={selectedModule}
-        isOpen={isPopupOpen}
-        onClose={handleClosePopup}
-        onActionClick={handleActionClick}
-      />
+      {selectedModule && (
+        <KnowledgeModulePopup
+          module={selectedModule}
+          isOpen={isPopupOpen}
+          onClose={handleClosePopup}
+          userId={user?.id || ''}
+        />
+      )}
     </div>
   );
 };

@@ -26,17 +26,17 @@ const DashboardContent = ({ dashboardData, userStats }: DashboardContentProps) =
         {/* User stats cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <UserProgressCard 
-            title="Completed Scenarios"
+            label="Completed Scenarios"
             value={userStats.scenariosCompleted}
             icon="📋"
           />
           <UserProgressCard 
-            title="Badges Earned"
+            label="Badges Earned"
             value={userStats.badgesEarned}
             icon="🏆"
           />
           <UserProgressCard 
-            title="Average Rating"
+            label="Average Rating"
             value={userStats.avgRating}
             icon="⭐"
             suffix="/5"
@@ -95,14 +95,14 @@ const DashboardContent = ({ dashboardData, userStats }: DashboardContentProps) =
         
         <TabsContent value="progress">
           <ProgressSection 
-            progress={dashboardData.progress} 
-            completedScenarios={dashboardData.completedScenarios} 
+            xpProgress={dashboardData.progress} 
+            completedItems={dashboardData.completedScenarios} 
           />
         </TabsContent>
         
         <TabsContent value="scenarios">
           <ScenariosList 
-            scenarios={dashboardData.recommendations || []}
+            items={dashboardData.recommendations || []}
           />
           <RecommendationsList 
             recommendations={dashboardData.recommendations || []}
@@ -122,9 +122,7 @@ const DashboardContent = ({ dashboardData, userStats }: DashboardContentProps) =
         </TabsContent>
         
         <TabsContent value="learning-path">
-          <LearningPathList 
-            learningPath={dashboardData.learningPath || []}
-          />
+          <LearningPathList />
         </TabsContent>
       </Tabs>
     </>

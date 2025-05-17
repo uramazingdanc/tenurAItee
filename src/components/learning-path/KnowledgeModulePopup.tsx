@@ -126,9 +126,11 @@ export const KnowledgeModulePopup = ({ module, onClose, userId }: KnowledgeModul
           </TabsList>
           
           <TabsContent value="content" className="flex-grow overflow-auto p-4" ref={contentRef}>
-            <ReactMarkdown className="prose prose-blue max-w-none">
-              {module.content}
-            </ReactMarkdown>
+            <div className="prose prose-blue max-w-none">
+              <ReactMarkdown>
+                {module.content}
+              </ReactMarkdown>
+            </div>
             
             {module.actions && module.actions.length > 0 && (
               <div className="mt-8 pt-4 border-t">
@@ -279,3 +281,5 @@ export const KnowledgeModulePopup = ({ module, onClose, userId }: KnowledgeModul
     </Dialog>
   );
 };
+
+export default KnowledgeModulePopup;
