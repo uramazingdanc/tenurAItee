@@ -429,10 +429,9 @@ const Dashboard = () => {
                       key={index}
                       className="border rounded-md p-3 hover:border-brand-blue hover:bg-brand-blue/5 cursor-pointer transition-colors"
                       whileHover={{ scale: 1.02, x: 5 }}
-                      transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                      // Fixed the duplicate transition attribute by removing it
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
-                      custom={index}
                       transition={{ delay: 0.2 + (index * 0.1), duration: 0.3 }}
                     >
                       <div className="flex items-center">
