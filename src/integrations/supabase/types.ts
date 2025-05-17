@@ -63,6 +63,47 @@ export type Database = {
         }
         Relationships: []
       }
+      features: {
+        Row: {
+          created_at: string | null
+          description: string
+          icon: string
+          id: string
+          is_premium: boolean
+          name: string
+          tier_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string
+          icon?: string
+          id?: string
+          is_premium?: boolean
+          name: string
+          tier_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          icon?: string
+          id?: string
+          is_premium?: boolean
+          name?: string
+          tier_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "features_tier_id_fkey"
+            columns: ["tier_id"]
+            isOneToOne: false
+            referencedRelation: "tiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       knowledge_items: {
         Row: {
           category: string
@@ -275,6 +316,33 @@ export type Database = {
         }
         Relationships: []
       }
+      tiers: {
+        Row: {
+          created_at: string | null
+          description: string
+          id: string
+          is_free: boolean
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string
+          id?: string
+          is_free?: boolean
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          id?: string
+          is_free?: boolean
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       user_progress: {
         Row: {
           completed: boolean | null
@@ -322,6 +390,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      video_tags: {
+        Row: {
+          created_at: string | null
+          id: string
+          tag: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          tag: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          tag?: string
+        }
+        Relationships: []
       }
       videos: {
         Row: {

@@ -85,8 +85,7 @@ export const fetchVideosByCategory = async (category: string, includePremium: bo
 export const fetchVideoTags = async (): Promise<string[]> => {
   const { data, error } = await supabase
     .from('video_tags')
-    .select('tag')
-    .order('tag');
+    .select('tag');
     
   if (error) {
     console.error("Error fetching video tags:", error);
