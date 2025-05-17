@@ -145,7 +145,8 @@ const Dashboard = () => {
                     <CardDescription>Follow this path to mastery</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <LearningPathList level={dashboardData.progress.level} />
+                    {/* Fix: Removed the level prop since it's not expected in LearningPathList */}
+                    <LearningPathList />
                   </CardContent>
                 </Card>
               </TabsContent>

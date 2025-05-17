@@ -36,6 +36,141 @@ export type Database = {
         }
         Relationships: []
       }
+      achievements: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          icon: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description: string
+          icon: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          icon?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      agent_performance: {
+        Row: {
+          created_at: string
+          customer_satisfaction: number | null
+          id: string
+          improvement_areas: Json | null
+          issue_resolution_rate: number | null
+          period_end: string
+          period_start: string
+          response_accuracy: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          customer_satisfaction?: number | null
+          id?: string
+          improvement_areas?: Json | null
+          issue_resolution_rate?: number | null
+          period_end: string
+          period_start: string
+          response_accuracy?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          customer_satisfaction?: number | null
+          id?: string
+          improvement_areas?: Json | null
+          issue_resolution_rate?: number | null
+          period_end?: string
+          period_start?: string
+          response_accuracy?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      agent_progress: {
+        Row: {
+          created_at: string
+          current_level: number
+          current_streak: number
+          id: string
+          last_activity_date: string
+          updated_at: string
+          user_id: string
+          xp_points: number
+        }
+        Insert: {
+          created_at?: string
+          current_level?: number
+          current_streak?: number
+          id?: string
+          last_activity_date?: string
+          updated_at?: string
+          user_id: string
+          xp_points?: number
+        }
+        Update: {
+          created_at?: string
+          current_level?: number
+          current_streak?: number
+          id?: string
+          last_activity_date?: string
+          updated_at?: string
+          user_id?: string
+          xp_points?: number
+        }
+        Relationships: []
+      }
+      ai_chat_history: {
+        Row: {
+          id: string
+          kb_articles: Json | null
+          message: string
+          role: string
+          session_id: string
+          suggestions: Json | null
+          timestamp: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          kb_articles?: Json | null
+          message: string
+          role: string
+          session_id: string
+          suggestions?: Json | null
+          timestamp?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          kb_articles?: Json | null
+          message?: string
+          role?: string
+          session_id?: string
+          suggestions?: Json | null
+          timestamp?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       faqs: {
         Row: {
           answer: string
@@ -342,6 +477,35 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      user_achievements: {
+        Row: {
+          achievement_id: string
+          earned_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          achievement_id: string
+          earned_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          achievement_id?: string
+          earned_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_achievements_achievement_id_fkey"
+            columns: ["achievement_id"]
+            isOneToOne: false
+            referencedRelation: "achievements"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_progress: {
         Row: {
