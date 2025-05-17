@@ -28,7 +28,8 @@ export const sendChatMessage = async (
       body: {
         message,
         history: formattedHistory,
-        sessionId
+        sessionId,
+        includeUserContext: true // Request user context for personalization
       }
     });
 
@@ -46,7 +47,8 @@ export const sendChatMessage = async (
       message: data.response,
       suggestions: formattedSuggestions,
       knowledgeArticles: data.kb_articles,
-      sessionId: data.sessionId
+      sessionId: data.sessionId,
+      insights: data.insights // Include any insights from the AI
     };
   } catch (error) {
     console.error("Error sending chat message:", error);
@@ -94,6 +96,27 @@ export const getStoredSessionId = (userId: string): string => {
 // Store session ID in local storage
 export const storeSessionId = (userId: string, sessionId: string): void => {
   localStorage.setItem(`chat_session_${userId}`, sessionId);
+};
+
+// Get specific call improvement advice based on a scenario and performance
+export const getCallImprovementAdvice = async (
+  scenarioId: string,
+  performanceMetrics: any
+): Promise<string> => {
+  try {
+    const { data, error } = await supabase.functions.invoke('enhanced-ai-chat', {
+      body: {
+        message: `Generate specific advice for improving performance on the ${scenarioId} scenario. Current metrics: ${JSON.stringify(performanceMetrics)}`,
+        isAdviceRequest: true
+      }
+    });
+    
+    if (error) throw error;
+    return data.response;
+  } catch (error) {
+    console.error("Error getting improvement advice:", error);
+    return "I couldn't generate specific advice at this time. Try reviewing your call recordings for areas of improvement.";
+  }
 };
 
 // Default welcome message

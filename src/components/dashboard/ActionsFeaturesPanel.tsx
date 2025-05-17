@@ -1,15 +1,21 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion } from "@/components/ui/motion";
-import { FileText, Phone, MessageSquare } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { FileText, Phone } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import TenuredAIAssistant from "./TenuredAIAssistant";
 
 interface ActionFeaturesPanelProps {
   recommendedScenario: any;
+  recentCallData?: any;
+  userProgress?: any;
 }
 
-const ActionsFeaturesPanel = ({ recommendedScenario }: ActionFeaturesPanelProps) => {
+const ActionsFeaturesPanel = ({ 
+  recommendedScenario, 
+  recentCallData,
+  userProgress 
+}: ActionFeaturesPanelProps) => {
   const navigate = useNavigate();
   
   return (
@@ -83,50 +89,16 @@ const ActionsFeaturesPanel = ({ recommendedScenario }: ActionFeaturesPanelProps)
         </Card>
       </motion.div>
       
-      {/* AI Assistant Widget */}
+      {/* Enhanced AI Assistant Widget */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.2 }}
       >
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex items-start">
-              <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center mr-4">
-                <MessageSquare className="h-6 w-6 text-purple-600" />
-              </div>
-              <CardTitle className="text-lg">Tenured AI Assistant</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="mt-2 flex items-start">
-              <div className="w-8 h-8 rounded-full bg-purple-100 flex-shrink-0 flex items-center justify-center">
-                <MessageSquare className="h-4 w-4 text-purple-600" />
-              </div>
-              <div className="ml-3 bg-gray-100 p-3 rounded-lg rounded-tl-none text-sm flex-grow">
-                "Hi there! Ready to practice refund scenarios today?"
-              </div>
-            </div>
-            
-            <div className="mt-4 flex gap-2">
-              <Button 
-                variant="secondary" 
-                size="sm" 
-                className="flex-1"
-                onClick={() => navigate('/chat-simulation')}
-              >
-                Yes, Let's Go
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="flex-1"
-              >
-                Later
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <TenuredAIAssistant 
+          recentCallData={recentCallData} 
+          userProgress={userProgress}
+        />
       </motion.div>
     </div>
   );

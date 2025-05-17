@@ -13,9 +13,10 @@ interface DashboardGridProps {
     communication: number;
   };
   dashboardData: any;
+  recentCallData?: any;
 }
 
-const DashboardGrid = ({ userMetrics, dashboardData }: DashboardGridProps) => {
+const DashboardGrid = ({ userMetrics, dashboardData, recentCallData }: DashboardGridProps) => {
   return (
     <motion.div 
       className="grid grid-cols-1 lg:grid-cols-3 gap-6"
@@ -39,6 +40,8 @@ const DashboardGrid = ({ userMetrics, dashboardData }: DashboardGridProps) => {
       <div>
         <ActionsFeaturesPanel 
           recommendedScenario={dashboardData.recommendations?.[0] || null}
+          recentCallData={recentCallData}
+          userProgress={dashboardData.progress}
         />
       </div>
       
