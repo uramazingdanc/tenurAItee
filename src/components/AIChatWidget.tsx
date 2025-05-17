@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -61,7 +62,7 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ isOpen, setIsOpen }) => {
       ...prev,
       {
         id: Date.now().toString() + "-ai",
-        role: "assistant" as const,  // Explicitly type this as "assistant"
+        role: "assistant",
         content: aiResponse,
         timestamp: new Date(),
       },
@@ -77,7 +78,7 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ isOpen, setIsOpen }) => {
     // Add user message - Fix the type of 'role' to be "user" explicitly
     const userMessage: ChatMessage = {
       id: Date.now().toString() + "-user",
-      role: "user",  // This is already correctly typed
+      role: "user",
       content: input,
       timestamp: new Date(),
     };
