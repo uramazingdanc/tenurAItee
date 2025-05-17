@@ -43,10 +43,7 @@ const Auth = () => {
     try {
       setIsSubmitting(true);
       await signUp(email, password, fullName);
-      // Clear form after successful signup
-      setEmail("");
-      setPassword("");
-      setFullName("");
+      // No need to clear form as user will be redirected
     } catch (error) {
       console.error("Sign up error:", error);
     } finally {
@@ -122,7 +119,7 @@ const Auth = () => {
               <form onSubmit={handleSignUp}>
                 <CardHeader>
                   <CardTitle>Create an account</CardTitle>
-                  <CardDescription>Enter your information to get started</CardDescription>
+                  <CardDescription>Enter your information to get started immediately</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
@@ -164,7 +161,7 @@ const Auth = () => {
                     className="w-full bg-brand-blue hover:bg-brand-blue-dark"
                     disabled={isSubmitting}
                   >
-                    {isSubmitting ? "Creating account..." : "Sign Up"}
+                    {isSubmitting ? "Creating account..." : "Create Account & Sign In"}
                   </Button>
                 </CardFooter>
               </form>
