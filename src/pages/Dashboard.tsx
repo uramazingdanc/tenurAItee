@@ -6,6 +6,7 @@ import VideoHub from "@/components/VideoHub";
 import CallSimulation from "@/components/CallSimulation";
 import AIChatWidget from "@/components/AIChatWidget";
 import { useState } from "react";
+import HomeFeatureCards from "@/components/dashboard/HomeFeatureCards";
 
 const Dashboard = () => {
   const location = useLocation();
@@ -27,8 +28,12 @@ const Dashboard = () => {
         </div>
       );
     } else {
-      // Default to showing the dashboard home
-      return <DashboardLayout />;
+      // Default to showing the dashboard home with feature cards
+      return (
+        <div className="container mx-auto px-4 py-8">
+          <HomeFeatureCards />
+        </div>
+      );
     }
   };
 

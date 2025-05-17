@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import AIChatWidget from "@/components/AIChatWidget";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
@@ -23,8 +23,18 @@ const DashboardLayout = () => {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
   
+  // Handle errors with useEffect
+  useEffect(() => {
+    if (dashboardError) {
+      console.error('Dashboard error:', dashboardError);
+      toast.error('Failed to load dashboard data', {
+        description: 'Please try refreshing the page',
+      });
+    }
+  }, [dashboardError]);
+
   // Demo effect to show a welcome toast
-  useState(() => {
+  useEffect(() => {
     if (user?.id) {
       const hasSeenWelcome = sessionStorage.getItem('welcomed');
       if (!hasSeenWelcome) {
@@ -40,7 +50,7 @@ const DashboardLayout = () => {
         }, 1500);
       }
     }
-  });
+  }, [user]);
 
   // Display loading state
   if (isLoading) {

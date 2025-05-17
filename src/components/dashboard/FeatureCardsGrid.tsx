@@ -19,8 +19,8 @@ const FeatureCardsGrid = () => {
   const defaultFeatures = [
     {
       icon: FileText,
-      title: "RAG-based Training",
-      description: "Training based on retrieval augmented generation",
+      title: "RAG-Powered Knowledge Base",
+      description: "Access our comprehensive knowledge base to learn best practices",
       linkTo: "/knowledge",
       iconColor: "text-blue-600",
       iconBgColor: "bg-blue-100",
@@ -29,8 +29,8 @@ const FeatureCardsGrid = () => {
     },
     {
       icon: Phone,
-      title: "Mock Call Experience",
-      description: "Practice handling customer inquiries",
+      title: "Mock Call Scenarios",
+      description: "Practice handling customer inquiries with interactive simulations",
       linkTo: "/scenarios",
       iconColor: "text-green-600",
       iconBgColor: "bg-green-100",
@@ -39,21 +39,21 @@ const FeatureCardsGrid = () => {
     },
     {
       icon: Play,
-      title: "Tenured Agent Videos",
-      description: "Learn from watching experienced agents",
+      title: "Video Learning Hub",
+      description: "Learn from watching experienced agents handle calls",
       linkTo: "/videos",
-      iconColor: "text-purple-600",
-      iconBgColor: "bg-purple-100",
+      iconColor: "text-indigo-600",
+      iconBgColor: "bg-indigo-100",
       apiEndpoint: "/media/videos",
       isLocked: false
     },
     {
       icon: MessageSquare,
-      title: "Guided Simulations",
-      description: "Step-by-step guided call simulations",
+      title: "Tenured AI Assistant",
+      description: "Get real-time feedback during guided call simulations",
       linkTo: "/chat-simulation",
-      iconColor: "text-orange-600",
-      iconBgColor: "bg-orange-100",
+      iconColor: "text-purple-600",
+      iconBgColor: "bg-purple-100",
       apiEndpoint: "/user/current_scenario",
       isLocked: user?.id ? false : true, // Lock for non-authenticated users
       requiredPrerequisites: ["Basic Training"] 
