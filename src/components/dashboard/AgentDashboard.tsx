@@ -21,7 +21,8 @@ const AgentDashboard = () => {
         setIsLoading(true);
         setError(null);
         
-        const data = await fetchDashboardData(user.id);
+        // Removing the argument here, as fetchDashboardData doesn't expect one
+        const data = await fetchDashboardData();
         setDashboardData(data);
       } catch (err) {
         console.error("Error fetching dashboard data:", err);
@@ -47,14 +48,11 @@ const AgentDashboard = () => {
   const recentCallData = dashboardData?.completedScenarios?.[0] || null;
 
   if (isLoading) return <DashboardLoading />;
-  if (error) return <DashboardError message={error} />;
+  if (error) return <DashboardError error={error} />;
 
   return (
     <div className="container mx-auto px-4 pb-12">
-      <DashboardHeader 
-        profile={dashboardData?.profile} 
-        progress={dashboardData?.progress}
-      />
+      <DashboardHeader user={user} />
       
       <DashboardGrid 
         userMetrics={userMetrics} 

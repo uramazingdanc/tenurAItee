@@ -16,4 +16,5 @@ export interface AICoachResponse {
   suggestions?: ChatSuggestion[];
   knowledgeArticles?: KnowledgeArticle[];
   sessionId?: string;
+  insights?: string; // Added this property for AI insights
 }
