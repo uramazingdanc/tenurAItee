@@ -49,7 +49,7 @@ const AgentProgressPanel = ({
             <div className="flex flex-wrap justify-between">
               <div className="w-full flex justify-center mb-2">
                 <MotionProgressRing 
-                  value={Math.round((
+                  progress={Math.round((
                     metrics.empathy + 
                     metrics.accuracy + 
                     metrics.speed + 
