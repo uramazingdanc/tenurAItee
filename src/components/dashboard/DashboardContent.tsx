@@ -54,14 +54,12 @@ const DashboardMainContent = ({ dashboardData, userStats }) => {
     <>
       {/* Progress Section */}
       <ProgressSection 
-        progress={{
-          level: dashboardData.progress.current_level,
-          currentXp: dashboardData.progress.xp_points,
-          requiredXp: (dashboardData.progress.current_level + 1) * 100,
-          streak: dashboardData.progress.current_streak,
-          nextReward: "New Badge"
-        }}
-        userStats={userStats}
+        level={dashboardData.progress.current_level}
+        xpProgress={Math.floor((dashboardData.progress.xp_points / ((dashboardData.progress.current_level + 1) * 100)) * 100)}
+        scenariosCompleted={userStats.scenariosCompleted}
+        badgesEarned={userStats.badgesEarned}
+        avgRating={userStats.avgRating}
+        skillName="Advanced Problem Solving"
       />
 
       {/* Tabs Section */}

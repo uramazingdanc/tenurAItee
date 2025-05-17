@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 // Types for dashboard data
@@ -10,6 +9,9 @@ export interface TrainingFeature {
   iconBgColor?: string;
   linkTo?: string;
   is_premium?: boolean;
+  apiEndpoint?: string;
+  isLocked?: boolean;
+  requiredPrerequisites?: string[];
 }
 
 export interface AgentPerformance {
@@ -134,7 +136,10 @@ export const fetchTrainingFeatures = async (): Promise<TrainingFeature[]> => {
       ...feature,
       iconColor: getIconColor(feature.name),
       iconBgColor: getIconBgColor(feature.name),
-      linkTo: getLinkForFeature(feature.name)
+      linkTo: getLinkForFeature(feature.name),
+      apiEndpoint: getApiEndpointForFeature(feature.name),
+      isLocked: false, // Default to unlocked
+      requiredPrerequisites: [] // Default to no prerequisites
     }));
   } catch (error) {
     console.error('Failed to fetch training features:', error);
@@ -168,6 +173,16 @@ const getLinkForFeature = (featureName: string): string => {
   if (name.includes('video')) return '/videos';
   if (name.includes('assistant')) return '/dashboard#chat';
   return '/dashboard';
+};
+
+// New helper function for API endpoints
+const getApiEndpointForFeature = (featureName: string): string | undefined => {
+  const name = featureName.toLowerCase();
+  if (name.includes('knowledge') || name.includes('rag')) return '/training/rag';
+  if (name.includes('call')) return '/simulator/start';
+  if (name.includes('video')) return '/media/videos';
+  if (name.includes('assistant') || name.includes('chat')) return '/user/current_scenario';
+  return undefined;
 };
 
 // Update agent progress
