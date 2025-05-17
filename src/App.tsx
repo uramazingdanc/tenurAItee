@@ -9,6 +9,8 @@ import Features from "./pages/Features";
 import Pricing from "./pages/Pricing";
 import About from "./pages/About";
 import Dashboard from "./pages/Dashboard";
+import Profile from "./pages/Profile";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -34,6 +36,7 @@ const AppLayout = () => {
     location.pathname === '/videos' ||
     location.pathname === '/knowledge' ||
     location.pathname === '/profile' ||
+    location.pathname === '/settings' ||
     location.pathname === '/scenarios' ||
     location.pathname.startsWith('/scenarios/') ||
     location.pathname === '/chat-simulation';
@@ -55,7 +58,8 @@ const AppLayout = () => {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/videos" element={<Dashboard />} />
           <Route path="/knowledge" element={<Dashboard />} />
-          <Route path="/profile" element={<Dashboard />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/settings" element={<Settings />} />
           <Route path="/scenarios" element={<Dashboard />} />
           <Route path="/scenarios/:id" element={<Dashboard />} />
           <Route path="/chat-simulation" element={<Dashboard />} />

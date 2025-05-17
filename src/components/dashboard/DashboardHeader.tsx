@@ -3,12 +3,15 @@ import { motion } from "@/components/ui/motion";
 import { Button } from "@/components/ui/button";
 import UserProfileHeader from "./UserProfileHeader";
 import { UserData } from "@/types/user";
+import { Settings } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface DashboardHeaderProps {
   user: UserData | null;
 }
 
 const DashboardHeader = ({ user }: DashboardHeaderProps) => {
+  const navigate = useNavigate();
   const userName = user?.user_metadata?.full_name || 'John Smith';
   const userInitials = userName.split(' ').map(name => name[0]).join('') || 'JS';
   
@@ -33,8 +36,13 @@ const DashboardHeader = ({ user }: DashboardHeaderProps) => {
         </motion.p>
       </div>
       <div className="mt-4 md:mt-0 flex items-center">
-        <UserProfileHeader userName={userName} userInitials={userInitials} />
-        <Button variant="outline">Settings</Button>
+        <div onClick={() => navigate('/profile')}>
+          <UserProfileHeader userName={userName} userInitials={userInitials} />
+        </div>
+        <Button variant="outline" onClick={() => navigate('/settings')}>
+          <Settings className="h-4 w-4 mr-2" />
+          Settings
+        </Button>
       </div>
     </div>
   );
