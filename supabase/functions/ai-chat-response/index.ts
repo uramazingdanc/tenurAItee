@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
@@ -14,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { scenario, step, history, agentResponse } = await req.json();
+    const { scenario, step, history, agentResponse, userId } = await req.json();
     
     if (!scenario) {
       throw new Error('Scenario type is required');
@@ -70,6 +69,34 @@ serve(async (req) => {
     
     // Determine emotion based on content analysis
     const emotion = determineEmotion(aiResponse, step);
+
+    // If userId is provided, log this interaction to the database
+    if (userId) {
+      try {
+        // Create Supabase client with service role key for admin operations
+        const supabaseUrl = Deno.env.get("SUPABASE_URL") as string;
+        const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
+        
+        // @ts-ignore: Expected for Supabase import to be recognized in edge functions
+        const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+        const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+        
+        // Log this interaction in the database
+        await supabaseAdmin
+          .from('ai_chat_history')
+          .insert({
+            user_id: userId,
+            role: "assistant",
+            message: aiResponse,
+            session_id: history.length > 0 ? history[0].sessionId : null,
+          });
+          
+        console.log('Successfully logged chat interaction');
+      } catch (dbError) {
+        // Just log the error but don't fail the whole request
+        console.error('Failed to log interaction:', dbError);
+      }
+    }
     
     return new Response(
       JSON.stringify({ 

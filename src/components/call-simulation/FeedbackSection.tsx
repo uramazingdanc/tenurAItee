@@ -2,14 +2,37 @@
 import { Button } from "@/components/ui/button";
 import { CheckCircle, MessageSquare } from "lucide-react";
 import { CallStep } from "@/services/callScenarioService";
+import { useAuth } from "@/contexts/AuthContext";
+import { saveCallProgress } from "@/services/callScenarioService";
+import { useState } from "react";
 
 interface FeedbackSectionProps {
   feedbackMessage: string | null;
   transcript: CallStep[];
   onReset: () => void;
+  scenarioId: string;
 }
 
-const FeedbackSection = ({ feedbackMessage, transcript, onReset }: FeedbackSectionProps) => {
+const FeedbackSection = ({ feedbackMessage, transcript, onReset, scenarioId }: FeedbackSectionProps) => {
+  const { user } = useAuth();
+  const [isSaved, setIsSaved] = useState(false);
+
+  // Save progress to backend when component mounts
+  useState(() => {
+    const saveProgress = async () => {
+      if (user && !isSaved) {
+        try {
+          await saveCallProgress(user.id, scenarioId, transcript, 85);
+          setIsSaved(true);
+        } catch (error) {
+          console.error("Failed to save progress:", error);
+        }
+      }
+    };
+    
+    saveProgress();
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-center flex-col">

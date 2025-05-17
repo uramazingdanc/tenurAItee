@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { textToSpeech, voices } from "@/services/elevenLabsService";
 import { 
@@ -76,7 +75,8 @@ export function useCallSimulation() {
         state.selectedScenario.id,
         state.currentStep,
         state.transcript,
-        response
+        response,
+        user?.id // Pass user ID to log interaction
       );
 
       // Final step check

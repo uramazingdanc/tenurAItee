@@ -89,6 +89,7 @@ const CallSimulation = () => {
                     feedbackMessage={feedbackMessage}
                     transcript={transcript}
                     onReset={resetSimulation}
+                    scenarioId={selectedScenario.id}
                   />
                 )}
               </CardContent>

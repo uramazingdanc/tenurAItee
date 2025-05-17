@@ -77,7 +77,8 @@ export const generateNextCustomerResponse = async (
   scenarioId: string,
   currentStep: number,
   conversationHistory: any[],
-  agentResponse: string
+  agentResponse: string,
+  userId?: string  // Add userId parameter to log this interaction
 ): Promise<{ message: string, emotion: string }> => {
   try {
     const { data, error } = await supabase.functions.invoke('ai-chat-response', {
@@ -85,7 +86,8 @@ export const generateNextCustomerResponse = async (
         scenario: scenarioId,
         step: currentStep,
         history: conversationHistory,
-        agentResponse
+        agentResponse,
+        userId // Pass user ID for logging purposes
       }
     });
 
@@ -104,15 +106,60 @@ export const generateNextCustomerResponse = async (
   }
 };
 
-// Function to save call progress - in a real app this would save to your database
+// Function to save call progress to the database
 export const saveCallProgress = async (userId: string | undefined, scenarioId: string, transcript: any[], score?: number) => {
   if (!userId) return { success: false, error: 'User not authenticated' };
   
   try {
-    // This is a placeholder for actual database integration
-    console.log(`Saving progress for user ${userId} on scenario ${scenarioId}`);
-    console.log('Transcript:', transcript);
-    console.log('Score:', score);
+    // Save to Supabase database
+    const { error } = await supabase
+      .from('user_progress')
+      .upsert({
+        user_id: userId,
+        scenario_id: scenarioId,
+        score,
+        completed: true,
+        feedback: JSON.stringify(transcript.filter(t => t.speaker === 'Agent').map(t => t.message))
+      }, {
+        onConflict: 'user_id,scenario_id'
+      });
+
+    if (error) throw error;
+    
+    // Update agent_progress to add XP
+    try {
+      // First get the current progress
+      const { data: progressData } = await supabase
+        .from('agent_progress')
+        .select('xp_points, current_level, current_streak')
+        .eq('user_id', userId)
+        .single();
+
+      if (progressData) {
+        // Update with new XP
+        await supabase
+          .from('agent_progress')
+          .update({
+            xp_points: progressData.xp_points + 25, // Award 25 XP per completed scenario
+            last_activity_date: new Date().toISOString()
+          })
+          .eq('user_id', userId);
+      } else {
+        // Create new progress entry if none exists
+        await supabase
+          .from('agent_progress')
+          .insert({
+            user_id: userId,
+            xp_points: 25,
+            current_level: 1,
+            current_streak: 1,
+            last_activity_date: new Date().toISOString()
+          });
+      }
+    } catch (progressError) {
+      console.error('Error updating progress:', progressError);
+      // Don't fail the whole operation if progress update fails
+    }
     
     return { success: true };
   } catch (error) {
