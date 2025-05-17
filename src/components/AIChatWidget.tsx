@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -13,7 +12,7 @@ interface AIChatWidgetProps {
 
 interface ChatMessage {
   id: string;
-  role: "user" | "assistant";
+  role: "user" | "assistant"; // Explicitly limited to these two values
   content: string;
   timestamp: Date;
 }
@@ -57,12 +56,12 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ isOpen, setIsOpen }) => {
     
     setIsTyping(false);
     
-    // Add AI response to messages
+    // Add AI response to messages - Fix the type of 'role' to be "assistant" explicitly
     setMessages(prev => [
       ...prev,
       {
         id: Date.now().toString() + "-ai",
-        role: "assistant",
+        role: "assistant" as const,  // Explicitly type this as "assistant"
         content: aiResponse,
         timestamp: new Date(),
       },
@@ -75,10 +74,10 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ isOpen, setIsOpen }) => {
     
     if (!input.trim()) return;
     
-    // Add user message
-    const userMessage = {
+    // Add user message - Fix the type of 'role' to be "user" explicitly
+    const userMessage: ChatMessage = {
       id: Date.now().toString() + "-user",
-      role: "user",
+      role: "user",  // This is already correctly typed
       content: input,
       timestamp: new Date(),
     };
