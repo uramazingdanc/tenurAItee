@@ -5,17 +5,12 @@ import KnowledgeBase from "@/components/KnowledgeBase";
 import VideoHub from "@/components/VideoHub";
 import CallSimulation from "@/components/CallSimulation";
 import AIChatWidget from "@/components/AIChatWidget";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 const Dashboard = () => {
   const location = useLocation();
   const path = location.pathname;
   const [isChatOpen, setIsChatOpen] = useState(false);
-  
-  // Force update on mount to ensure components re-render
-  useEffect(() => {
-    console.log("Dashboard mounted, path:", path);
-  }, [path]);
   
   // Determine which content to show based on the current path
   const renderContent = () => {
@@ -40,7 +35,7 @@ const Dashboard = () => {
   // Show AI chat widget only in dashboard pages
   const showChatWidget = ["/chat-simulation", "/knowledge", "/videos", "/scenarios"].some(
     route => path === route || path.startsWith(route + "/")
-  ) || path === "/dashboard" || path === "/";
+  ) || path === "/dashboard";
 
   return (
     <div className="min-h-screen bg-gray-50 pt-20">

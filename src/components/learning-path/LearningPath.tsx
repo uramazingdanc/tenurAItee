@@ -1,7 +1,8 @@
+
 import { useState, useEffect } from "react";
 import { motion } from "@/components/ui/motion";
 import KnowledgeModule from "./KnowledgeModule";
-import { KnowledgeModulePopup } from "./KnowledgeModulePopup";
+import KnowledgeModulePopup from "./KnowledgeModulePopup";
 import { KnowledgeModule as KnowledgeModuleType, getUserLearningPath, updateModuleStatus } from "@/services/learningPathService";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -129,13 +130,12 @@ const LearningPath = () => {
         </motion.div>
       ))}
 
-      {selectedModule && (
-        <KnowledgeModulePopup
-          module={selectedModule}
-          onClose={handleClosePopup}
-          userId={user?.id || ''}
-        />
-      )}
+      <KnowledgeModulePopup
+        module={selectedModule}
+        isOpen={isPopupOpen}
+        onClose={handleClosePopup}
+        onActionClick={handleActionClick}
+      />
     </div>
   );
 };

@@ -2,34 +2,69 @@
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LucideIcon } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { toast } from "@/components/ui/sonner";
 
 interface FeatureCardProps {
   icon: LucideIcon;
   title: string;
   description: string;
-  linkTo?: string;
+  linkTo: string;
   iconColor?: string;
   iconBgColor?: string;
   isLocked?: boolean;
   requiredPrerequisites?: string[];
   apiEndpoint?: string;
-  onClick?: () => void;
 }
 
 const FeatureCard = ({ 
   icon: Icon, 
   title, 
   description, 
+  linkTo, 
   iconColor = "text-brand-blue", 
   iconBgColor = "bg-brand-blue/10",
   isLocked = false,
   requiredPrerequisites = [],
-  onClick
+  apiEndpoint
 }: FeatureCardProps) => {
+  const navigate = useNavigate();
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    
+    if (isLocked) {
+      toast.warning("Complete prerequisites first", {
+        description: `You need to complete ${requiredPrerequisites.join(", ")} to unlock this feature.`,
+      });
+      return;
+    }
+
+    // Log the action for analytics (simplified version)
+    console.log(`User clicked on feature: ${title}`);
+
+    // Simulate loading state for API-dependent features
+    if (apiEndpoint) {
+      toast.info(`Loading ${title}...`, {
+        description: "Preparing your personalized content"
+      });
+      
+      // In a real implementation, we would make the API call here
+      // For now, just navigate after a short delay to simulate loading
+      setTimeout(() => {
+        navigate(linkTo);
+      }, 800);
+      return;
+    }
+
+    navigate(linkTo);
+  };
 
   return (
     <div 
-      onClick={onClick}
+      onClick={handleCardClick}
       className={`cursor-pointer ${isLocked ? "opacity-70" : ""}`}
     >
       <Card className={`h-full transition-all duration-200 hover:shadow-md ${isLocked ? "border-gray-300" : "hover:border-brand-blue/40"}`}>
