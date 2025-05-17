@@ -15,15 +15,24 @@ const DashboardLayout = () => {
   const [isAIChatOpen, setIsAIChatOpen] = useState(false);
   const { user } = useAuth();
 
-  // Use React Query for data fetching with explicit error handling
+  // Use React Query for data fetching with proper error handling using meta
   const { data: dashboardData, error: dashboardError, isLoading, refetch } = useQuery({
     queryKey: ['dashboardData', user?.id],
     queryFn: fetchDashboardData,
     enabled: !!user?.id,
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: 2,
-    onError: (error) => {
-      console.error("Dashboard data fetch error:", error);
+    meta: {
+      onError: (error: Error) => {
+        console.error("Dashboard data fetch error in meta:", error);
+      }
+    }
+  });
+  
+  // Set up separate effect for error handling
+  useEffect(() => {
+    if (dashboardError) {
+      console.error("Dashboard data fetch error in effect:", dashboardError);
       toast.error("Failed to load dashboard data", {
         description: "Please try refreshing the page",
         action: {
@@ -32,7 +41,7 @@ const DashboardLayout = () => {
         }
       });
     }
-  });
+  }, [dashboardError, refetch]);
   
   // Log data availability for debugging
   useEffect(() => {
