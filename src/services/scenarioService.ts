@@ -10,10 +10,17 @@ export type Scenario = {
   is_premium: boolean | null;
 };
 
-export const fetchScenarios = async (): Promise<Scenario[]> => {
-  const { data, error } = await supabase
+export const fetchScenarios = async (includePremium: boolean = false): Promise<Scenario[]> => {
+  const query = supabase
     .from('scenarios')
     .select('*');
+    
+  // If we don't want premium content, explicitly filter it out
+  if (!includePremium) {
+    query.eq('is_premium', false);
+  }
+  
+  const { data, error } = await query;
   
   if (error) {
     console.error("Error fetching scenarios:", error);
@@ -74,6 +81,20 @@ export const fetchUserProgress = async (userId: string): Promise<any[]> => {
   
   if (error) {
     console.error("Error fetching user progress:", error);
+    throw error;
+  }
+  
+  return data || [];
+};
+
+export const fetchPremiumScenarios = async (): Promise<Scenario[]> => {
+  const { data, error } = await supabase
+    .from('scenarios')
+    .select('*')
+    .eq('is_premium', true);
+    
+  if (error) {
+    console.error("Error fetching premium scenarios:", error);
     throw error;
   }
   

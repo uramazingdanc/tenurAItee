@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useQuery } from "@tanstack/react-query";
 import { fetchKnowledgeItems, KnowledgeItem } from "@/services/knowledgeService";
+import { useAuth } from "@/contexts/AuthContext";
+import { Link } from "react-router-dom";
 
 // Helper to generate excerpt from content
 const generateExcerpt = (content: string): string => {
@@ -51,11 +53,13 @@ const groupByCategory = (items: KnowledgeItem[]): Record<string, KnowledgeItem[]
 
 const KnowledgeBase = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const { user } = useAuth();
+  const isAuthenticated = !!user;
   
   // Fetch knowledge items using react-query
   const { data: knowledgeItems, isLoading, error } = useQuery({
-    queryKey: ['knowledgeItems'],
-    queryFn: fetchKnowledgeItems
+    queryKey: ['knowledgeItems', isAuthenticated],
+    queryFn: () => fetchKnowledgeItems(isAuthenticated)
   });
   
   // Fallback knowledge categories
@@ -158,6 +162,15 @@ const KnowledgeBase = () => {
     console.error("Failed to load knowledge items:", error);
   }
 
+  // Filter items based on search query
+  const filterItems = (items: any[]) => {
+    if (!searchQuery) return items;
+    return items.filter(item => 
+      item.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      item.content.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  };
+
   return (
     <section className="py-16 bg-gray-50" id="knowledge">
       <div className="container mx-auto px-4">
@@ -167,6 +180,14 @@ const KnowledgeBase = () => {
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             Access our RAG-powered knowledge base to learn best practices for customer service in the travel industry.
+            {!isAuthenticated && (
+              <span className="block mt-2 text-brand-blue">
+                <Link to="/login" className="font-medium hover:underline">
+                  Sign in
+                </Link>{" "}
+                to access premium content.
+              </span>
+            )}
           </p>
         </div>
 
@@ -191,8 +212,8 @@ const KnowledgeBase = () => {
           <div className="flex justify-center">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-blue"></div>
           </div>
-        ) : (
-          <Tabs defaultValue={categories.length > 0 ? categories[0].id : "cancellations"} className="max-w-4xl mx-auto">
+        ) : categories.length > 0 ? (
+          <Tabs defaultValue={categories[0].id} className="max-w-4xl mx-auto">
             <TabsList className="grid grid-cols-3 mb-8">
               {categories.map((category) => (
                 <TabsTrigger key={category.id} value={category.id}>
@@ -201,34 +222,69 @@ const KnowledgeBase = () => {
               ))}
             </TabsList>
             
-            {categories.map((category) => (
-              <TabsContent key={category.id} value={category.id} className="space-y-6">
-                {categorizedContent[category.id]?.map((article: any) => (
-                  <Card key={article.id} className="card-hover overflow-hidden">
-                    <CardHeader className="pb-3">
-                      <CardTitle>{article.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <CardDescription className="text-base">{article.excerpt}</CardDescription>
-                    </CardContent>
-                    <Separator />
-                    <CardFooter className="pt-3 flex justify-between">
-                      <div className="flex space-x-2">
-                        {article.tags?.map((tag: string, index: number) => (
-                          <Badge key={index} variant="outline" className="bg-gray-100">
-                            {tag}
-                          </Badge>
-                        ))}
-                      </div>
-                      <Button variant="ghost" size="sm" className="text-brand-blue hover:text-brand-blue-dark hover:bg-brand-blue/10">
-                        Read More
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                ))}
-              </TabsContent>
-            ))}
+            {categories.map((category) => {
+              const categoryItems = categorizedContent[category.id] || [];
+              const filteredItems = filterItems(categoryItems);
+              
+              return (
+                <TabsContent key={category.id} value={category.id} className="space-y-6">
+                  {filteredItems.length > 0 ? (
+                    filteredItems.map((article: any) => (
+                      <Card key={article.id} className="card-hover overflow-hidden">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="flex items-center gap-2">
+                            {article.title}
+                            {article.is_premium && !isAuthenticated && (
+                              <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                                Premium
+                              </Badge>
+                            )}
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <CardDescription className="text-base">
+                            {article.is_premium && !isAuthenticated 
+                              ? "This is premium content. Please sign in to view."
+                              : article.excerpt}
+                          </CardDescription>
+                        </CardContent>
+                        <Separator />
+                        <CardFooter className="pt-3 flex justify-between">
+                          <div className="flex flex-wrap gap-2">
+                            {article.tags?.map((tag: string, index: number) => (
+                              <Badge key={index} variant="outline" className="bg-gray-100">
+                                {tag}
+                              </Badge>
+                            ))}
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-brand-blue hover:text-brand-blue-dark hover:bg-brand-blue/10"
+                            asChild={article.is_premium && !isAuthenticated}
+                          >
+                            {article.is_premium && !isAuthenticated ? (
+                              <Link to="/login">Sign In to Read</Link>
+                            ) : (
+                              "Read More"
+                            )}
+                          </Button>
+                        </CardFooter>
+                      </Card>
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <p>No articles found matching your search criteria.</p>
+                    </div>
+                  )}
+                </TabsContent>
+              );
+            })}
           </Tabs>
+        ) : (
+          <div className="text-center py-8">
+            <p>No knowledge base items found.</p>
+          </div>
         )}
       </div>
     </section>

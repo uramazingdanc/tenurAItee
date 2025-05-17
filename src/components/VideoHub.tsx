@@ -3,6 +3,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { fetchVideos } from "@/services/videoService";
+import { useAuth } from "@/contexts/AuthContext";
+import { Lock } from "lucide-react";
+import { Link } from "react-router-dom";
 import type { Video } from "@/services/videoService";
 
 // Helper function to calculate video duration (mocked for now)
@@ -28,10 +31,13 @@ const getDefaultThumbnail = (category: string): string => {
 };
 
 const VideoHub = () => {
+  const { user } = useAuth();
+  const isAuthenticated = !!user;
+  
   // Use react-query to fetch and cache video data
   const { data: videos, isLoading, error } = useQuery({
-    queryKey: ['videos'],
-    queryFn: fetchVideos
+    queryKey: ['videos', isAuthenticated],
+    queryFn: () => fetchVideos(isAuthenticated)
   });
 
   // Fallback videos if there's an error or while loading
@@ -90,6 +96,14 @@ const VideoHub = () => {
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             Watch recorded calls of tenured agents handling different customer service scenarios.
+            {!isAuthenticated && (
+              <span className="block mt-2 text-brand-blue">
+                <Link to="/login" className="font-medium hover:underline">
+                  Sign in
+                </Link>{" "}
+                to access premium content.
+              </span>
+            )}
           </p>
         </div>
 
@@ -109,15 +123,31 @@ const VideoHub = () => {
                       className="w-full h-48 object-cover transition-transform group-hover:scale-105"
                     />
                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button className="bg-white/20 hover:bg-white/40 backdrop-blur-sm rounded-full w-12 h-12 flex items-center justify-center">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M5 3L19 12L5 21V3Z" fill="white" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      </Button>
+                      {video.is_premium && !isAuthenticated ? (
+                        <Button 
+                          className="bg-white/20 hover:bg-white/40 backdrop-blur-sm rounded-full w-12 h-12 flex items-center justify-center"
+                          asChild
+                        >
+                          <Link to="/login">
+                            <Lock className="h-6 w-6 text-white" />
+                          </Link>
+                        </Button>
+                      ) : (
+                        <Button className="bg-white/20 hover:bg-white/40 backdrop-blur-sm rounded-full w-12 h-12 flex items-center justify-center">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M5 3L19 12L5 21V3Z" fill="white" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </Button>
+                      )}
                     </div>
                     <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
                       {video.duration}
                     </div>
+                    {video.is_premium && (
+                      <div className="absolute top-2 right-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full">
+                        Premium
+                      </div>
+                    )}
                   </div>
                   <CardContent className="pt-4">
                     <h3 className="font-medium text-lg mb-2">{video.title}</h3>
