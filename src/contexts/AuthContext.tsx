@@ -113,6 +113,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Clean up existing state
       cleanupAuthState();
       
+      // First, create the user account
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -120,24 +121,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           data: {
             full_name: fullName,
           },
-          emailRedirectTo: `${window.location.origin}/dashboard`,
+          // Don't use email redirect - we want auto sign-in
         },
       });
 
       if (error) throw error;
       
       if (data.user) {
-        // Auto sign-in after signup
+        // Wait for a moment before trying to sign in
+        // This ensures the user is properly created in the database
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Now sign in with the credentials
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         
-        if (signInError) throw signInError;
+        if (signInError) {
+          console.error("Auto sign-in failed:", signInError);
+          // Even if auto-login fails, the account was created
+          toast({
+            title: "Account created",
+            description: "Your account has been created. Please sign in with your credentials.",
+          });
+          navigate('/login');
+          return;
+        }
         
+        // Success case
         toast({
           title: "Account created",
-          description: "Your account has been created and you've been automatically signed in.",
+          description: "Your account has been created and you're now signed in.",
         });
         
         navigate('/dashboard');
