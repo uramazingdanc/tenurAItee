@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion } from "@/components/ui/motion";
-import { FileText, Phone } from "lucide-react";
+import { FileText, Phone, Play, MessageSquare } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import TenuredAIAssistant from "./TenuredAIAssistant";
 
@@ -99,6 +99,39 @@ const ActionsFeaturesPanel = ({
           recentCallData={recentCallData} 
           userProgress={userProgress}
         />
+      </motion.div>
+      
+      {/* Video Learning Hub Card - NEW CARD ADDED HERE */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.3 }}
+        onClick={() => navigate('/videos')}
+        className="cursor-pointer"
+      >
+        <Card className="hover:shadow-md transition-shadow duration-200">
+          <CardHeader className="pb-2">
+            <div className="flex items-start">
+              <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center mr-4">
+                <Play className="h-6 w-6 text-indigo-600" />
+              </div>
+              <div>
+                <CardTitle className="text-lg">Video Learning Hub</CardTitle>
+                <div className="text-xs text-blue-500 font-medium mt-1">
+                  ● 4 new videos added
+                </div>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="mt-1 text-sm text-gray-600">
+              Learn from watching experienced agents handle challenging scenarios
+            </div>
+            <div className="mt-3 bg-indigo-50 rounded p-2 text-xs text-indigo-700">
+              🎬 Popular: Flight Cancellations | Angry Customers
+            </div>
+          </CardContent>
+        </Card>
       </motion.div>
     </div>
   );
