@@ -26,6 +26,10 @@ const getDefaultThumbnail = (category: string): string => {
     "Best Practices": "https://via.placeholder.com/320x180/3B82F6/FFFFFF?text=Best+Practices",
     "Tutorials": "https://via.placeholder.com/320x180/22C55E/FFFFFF?text=Tutorials",
     "Advanced": "https://via.placeholder.com/320x180/8B5CF6/FFFFFF?text=Advanced",
+    "Flight Cancellations": "https://via.placeholder.com/320x180/EF4444/FFFFFF?text=Flight+Cancellations",
+    "Refund Requests": "https://via.placeholder.com/320x180/F59E0B/FFFFFF?text=Refund+Requests",
+    "Angry Customers": "https://via.placeholder.com/320x180/10B981/FFFFFF?text=Angry+Customers",
+    "Technical Issues": "https://via.placeholder.com/320x180/6366F1/FFFFFF?text=Technical+Issues",
     // Default fallback
     "default": "https://via.placeholder.com/320x180/EF4444/FFFFFF?text=Training+Video"
   };
