@@ -81,34 +81,46 @@ const VideoHub = () => {
   }));
 
   // Fallback videos if there's an error or while loading
-  const fallbackVideos = [
+  const fallbackVideos: (Video & { duration: string })[] = [
     {
       id: "1",
       title: "Handling Flight Cancellations",
-      duration: "8:24",
+      description: "Watch how experienced agents handle flight cancellation requests with empathy and efficiency.",
+      video_url: "https://example.com/videos/1.mp4",
       thumbnail_url: "https://via.placeholder.com/320x180/3B82F6/FFFFFF?text=Flight+Cancellations",
-      description: "Watch how experienced agents handle flight cancellation requests with empathy and efficiency."
+      category: "Customer Service",
+      is_premium: false,
+      duration: "8:24"
     },
     {
       id: "2",
       title: "Resolving Booking Disputes",
-      duration: "10:12",
+      description: "Learn techniques for addressing customer disputes regarding bookings and charges.",
+      video_url: "https://example.com/videos/2.mp4",
       thumbnail_url: "https://via.placeholder.com/320x180/22C55E/FFFFFF?text=Booking+Disputes",
-      description: "Learn techniques for addressing customer disputes regarding bookings and charges."
+      category: "Conflict Resolution",
+      is_premium: false,
+      duration: "10:12"
     },
     {
       id: "3",
       title: "Upselling Travel Insurance",
-      duration: "6:45",
+      description: "See how top agents naturally introduce and explain the benefits of travel insurance.",
+      video_url: "https://example.com/videos/3.mp4",
       thumbnail_url: "https://via.placeholder.com/320x180/8B5CF6/FFFFFF?text=Travel+Insurance",
-      description: "See how top agents naturally introduce and explain the benefits of travel insurance."
+      category: "Sales",
+      is_premium: true,
+      duration: "6:45"
     },
     {
       id: "4",
       title: "Handling Difficult Customers",
-      duration: "12:33",
+      description: "Expert strategies for turning negative customer experiences into positive outcomes.",
+      video_url: "https://example.com/videos/4.mp4",
       thumbnail_url: "https://via.placeholder.com/320x180/EF4444/FFFFFF?text=Difficult+Customers",
-      description: "Expert strategies for turning negative customer experiences into positive outcomes."
+      category: "Customer Service",
+      is_premium: false,
+      duration: "12:33"
     }
   ];
 

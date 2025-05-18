@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export type Video = {
@@ -106,18 +107,22 @@ export const trackVideoView = async (videoId: string, timeSpent?: number): Promi
     return;
   }
   
-  const { error } = await supabase
-    .from('video_views')
-    .insert({
-      user_id: user.id,
-      video_id: videoId,
-      time_spent: timeSpent || null
-    });
+  // Since video_views table doesn't exist yet, we'll just log it
+  console.log(`Tracking video view for video ${videoId}, user ${user.id}, time spent: ${timeSpent || 'not recorded'}`);
   
-  if (error) {
-    console.error("Error tracking video view:", error);
-    // Don't throw the error as this is non-critical functionality
-  }
+  // This would be the implementation once the video_views table is created:
+  // const { error } = await supabase
+  //   .from('video_views')
+  //   .insert({
+  //     user_id: user.id,
+  //     video_id: videoId,
+  //     time_spent: timeSpent || null
+  //   });
+  
+  // if (error) {
+  //   console.error("Error tracking video view:", error);
+  //   // Don't throw the error as this is non-critical functionality
+  // }
 };
 
 // Add function to fetch recommended videos based on user's viewing history
